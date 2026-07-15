@@ -1,3 +1,4 @@
+import './App.css';
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import HomeFeed from './pages/HomeFeed'
