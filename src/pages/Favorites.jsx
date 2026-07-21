@@ -1,35 +1,35 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import PlaceCard from '../components/PlaceCard';
+import { Link } from 'react-router-dom'
+import { Heart } from 'lucide-react'
+import { getPlace } from '../data/outyahData'
+import { useApp } from '../context/AppContext'
+import PlaceCard from '../components/PlaceCard'
 
-function Favorites() {
- 
-  const [favorites, setFavorites] = useState([]);
+export default function Favorites() {
+  const { favorites } = useApp()
+  const list = favorites.map((id) => getPlace(id)).filter(Boolean)
 
   return (
-    <section>
-      <h1>⭐ Favorites</h1>
-      
-      {favorites.length === 0 ? (
-        <div className="empty-state">
-          <p>You haven't saved any favorites yet.</p>
-          <p>💡 Explore places and save your favorites!</p>
-          <Link to="/" className="btn-view">Browse Places</Link>
+    <div className="stack-lg">
+      <header>
+        <p className="eyebrow">Saved for later</p>
+        <h1 className="display">Favorites</h1>
+      </header>
+
+      {list.length === 0 ? (
+        <div className="empty-card">
+          <Heart size={28} />
+          <p>Tap the heart on any place to save it here.</p>
+          <Link to="/" className="btn btn-primary">
+            Discover places
+          </Link>
         </div>
       ) : (
-        <div className="places-feed">
-          {favorites.map((place) => (
-            <PlaceCard key={place.id} place={place} />
+        <div className="place-grid">
+          {list.map((p) => (
+            <PlaceCard key={p.id} place={p} />
           ))}
         </div>
       )}
-
-      <div className="scroll-hint">
-        <span>⬇️ Scroll to discover</span>
-      </div>
-    </section>
-  );
+    </div>
+  )
 }
-
-export default Favorites;
-

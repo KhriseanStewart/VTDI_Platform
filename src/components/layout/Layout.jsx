@@ -1,40 +1,106 @@
-import { Outlet, NavLink } from 'react-router-dom';
-import './Navbar.css';
+import { NavLink, Outlet, Link } from 'react-router-dom'
+import {
+  Home,
+  Route,
+  Ticket,
+  User,
+  Heart,
+  CalendarHeart,
+} from 'lucide-react'
+import { useApp } from '../../context/AppContext'
+import { CURRENT_USER } from '../../data/outyahData'
 
-function Layout() {
+const NAV = [
+  { to: '/', label: 'Feed', icon: Home, end: true },
+  { to: '/plan', label: 'Plan', icon: Route },
+  { to: '/events', label: 'Events', icon: Ticket },
+  { to: '/profile', label: 'Profile', icon: User },
+]
+
+function Logo() {
   return (
-    <div className="app">
-      <header className="header">
-        <h1 className="app-title">🌴 Jamaica Outing Platform</h1>
-        <div className="weather">
-          <span className="temp">30°C</span>
-          <span className="condition">☀️ Partly sunny</span>
-        </div>
-      </header>
-
-      <main className="main-content">
-        <Outlet />
-      </main>
-
-      <nav className="bottom-nav">
-        <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          🏠 Feed
-        </NavLink>
-        <NavLink to="/search" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          🔍 Search
-        </NavLink>
-        <NavLink to="/plan" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          📋 Plan
-        </NavLink>
-        <NavLink to="/favorites" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          ⭐ Favorites
-        </NavLink>
-        <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          👤 Profile
-        </NavLink>
-      </nav>
-    </div>
-  );
+    <Link to="/" className="logo">
+      <span className="logo-mark">
+        <CalendarHeart size={20} />
+      </span>
+      <span className="logo-text">
+        Out<span>Yah</span>
+      </span>
+    </Link>
+  )
 }
 
-export default Layout;
+export default function Layout() {
+  const { plan, favorites } = useApp()
+
+  return (
+    <div className="shell">
+      <aside className="sidebar">
+        <Logo />
+        <nav className="sidebar-nav">
+          {NAV.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `sidebar-link${isActive ? ' is-active' : ''}`
+              }
+            >
+              <Icon size={19} />
+              {label}
+              {to === '/plan' && plan.length > 0 && (
+                <span className="count-pill">{plan.length}</span>
+              )}
+            </NavLink>
+          ))}
+          <NavLink
+            to="/favorites"
+            className={({ isActive }) =>
+              `sidebar-link${isActive ? ' is-active' : ''}`
+            }
+          >
+            <Heart size={19} />
+            Favorites
+            {favorites.length > 0 && (
+              <span className="count-pill">{favorites.length}</span>
+            )}
+          </NavLink>
+        </nav>
+
+        <Link to="/profile" className="sidebar-user">
+          <img src={CURRENT_USER.avatar} alt="" className="avatar" />
+          <span>
+            <strong>{CURRENT_USER.name}</strong>
+            <small>{CURRENT_USER.handle}</small>
+          </span>
+        </Link>
+      </aside>
+
+      <div className="shell-main">
+        <main className="page">
+          <Outlet />
+        </main>
+      </div>
+
+      <nav className="bottom-nav">
+        {NAV.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) =>
+              `bottom-link${isActive ? ' is-active' : ''}`
+            }
+          >
+            <Icon size={22} strokeWidth={2} />
+            {label}
+            {to === '/plan' && plan.length > 0 && (
+              <span className="badge-dot">{plan.length}</span>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+    </div>
+  )
+}
