@@ -1,38 +1,49 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { List, Map as MapIcon, Star, Camera } from 'lucide-react'
 import {
-  places,
-  events,
-  priceLabel,
-  CURRENT_USER,
-  getPlace,
-} from '../data/outyahData'
+  List,
+  Map as MapIcon,
+  Star,
+  Camera,
+  CalendarDays,
+  Compass,
+  AlertTriangle,
+} from 'lucide-react'
+import { CATEGORY_LABELS, priceLabel } from '../data/outyahData'
 import SearchBar from '../components/SearchBar'
 import CategoryChips from '../components/CategoryChips'
 import EventCard from '../components/EventCard'
 import InstagramPostCard from '../components/InstagramPostCard'
+import EmptyState from '../components/EmptyState'
 import { PlacesMap } from '../components/maps/GoogleMaps'
-import { useInstagramFeed } from '../hooks/useInstagramFeed'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
+import { useData } from '../context/DataContext'
 
 export default function HomeFeed() {
   const [view, setView] = useState('feed')
   const [cat, setCat] = useState('all')
   const [q, setQ] = useState('')
-  const [selected, setSelected] = useState(places[0]?.id)
-  const { posts, source, error, loading } = useInstagramFeed()
+  const { places, events, posts, loading, error, refresh } = useData()
+  const [selected, setSelected] = useState(null)
   const { isFavorite, toggleFavorite } = useApp()
+  const { profile, user, isAdmin } = useAuth()
+
+  const greetingName =
+    profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'friend'
 
   const filteredPosts = useMemo(() => {
     let list = posts
     if (cat !== 'all') {
-      list = list.filter((post) => getPlace(post.placeId)?.category === cat)
+      list = list.filter((post) => {
+        const place = places.find((p) => p.id === post.placeId)
+        return place?.category === cat
+      })
     }
     if (q.trim()) {
       const s = q.toLowerCase()
       list = list.filter((post) => {
-        const place = getPlace(post.placeId)
+        const place = places.find((p) => p.id === post.placeId)
         return (
           post.caption?.toLowerCase().includes(s) ||
           post.username?.toLowerCase().includes(s) ||
@@ -43,7 +54,7 @@ export default function HomeFeed() {
       })
     }
     return list
-  }, [posts, cat, q])
+  }, [posts, places, cat, q])
 
   const mapPlaces = useMemo(() => {
     const ids = new Set(filteredPosts.map((p) => p.placeId).filter(Boolean))
@@ -61,16 +72,18 @@ export default function HomeFeed() {
       )
     }
     return list
-  }, [filteredPosts, cat, q])
+  }, [filteredPosts, places, cat, q])
 
-  const active = places.find((p) => p.id === selected) || mapPlaces[0]
+  const activeId = selected || mapPlaces[0]?.id
+  const active = places.find((p) => p.id === activeId) || mapPlaces[0]
+  const heading = cat === 'all' ? 'Around Jamaica' : CATEGORY_LABELS[cat]
 
   return (
     <div className="stack-lg">
       <header className="feed-header">
         <div className="feed-header-row">
           <div>
-            <p className="eyebrow">Wah gwaan, {CURRENT_USER.name.split(' ')[0]}</p>
+            <p className="eyebrow">Wah gwaan, {greetingName}</p>
             <h1 className="display">Find your next outing</h1>
           </div>
           <div className="view-toggle" role="group" aria-label="Feed or map view">
@@ -93,7 +106,22 @@ export default function HomeFeed() {
         <SearchBar value={q} onChange={setQ} />
       </header>
 
-      {view === 'feed' && (
+      {error && (
+        <EmptyState
+          icon={AlertTriangle}
+          tone="warn"
+          eyebrow="Connection"
+          title="Couldn't reach Supabase"
+          description={error}
+          action={
+            <button type="button" className="btn btn-primary" onClick={refresh}>
+              Try again
+            </button>
+          }
+        />
+      )}
+
+      {!error && view === 'feed' && (
         <section>
           <div className="section-head">
             <h2>Happening this week</h2>
@@ -101,45 +129,81 @@ export default function HomeFeed() {
               See all
             </Link>
           </div>
-          <div className="event-strip">
-            {events.map((e) => (
-              <EventCard key={e.id} event={e} compact />
-            ))}
-          </div>
+          {loading ? (
+            <p className="muted">Loading events…</p>
+          ) : events.length === 0 ? (
+            <EmptyState
+              icon={CalendarDays}
+              eyebrow="Events"
+              title="No events on the calendar"
+              description="When admins publish nights out, live music, and premieres, they'll show up here."
+              action={
+                isAdmin ? (
+                  <Link to="/admin/events" className="btn btn-primary">
+                    Add an event
+                  </Link>
+                ) : null
+              }
+            />
+          ) : (
+            <div className="event-strip">
+              {events.map((e) => (
+                <EventCard key={e.id} event={e} compact />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
-      <div className="chips-sticky">
-        <CategoryChips selected={cat} onSelect={setCat} />
-      </div>
+      {!error && (
+        <div className="chips-sticky">
+          <CategoryChips selected={cat} onSelect={setCat} />
+        </div>
+      )}
 
-      {view === 'feed' ? (
+      {!error && view === 'feed' ? (
         <section className="stack">
           <div className="section-head">
             <h2 className="ig-section-title">
               <Camera size={18} />
-              {source === 'instagram' ? 'From Instagram' : 'Instagram-style feed'}
+              {heading}
             </h2>
             <span className="muted-count">
               {loading ? 'Loading…' : `${filteredPosts.length} posts`}
             </span>
           </div>
 
-          {source === 'demo' && (
-            <p className="ig-source-note">
-              Showing curated Instagram-style posts (photos + comments). Add{' '}
-              <code>VITE_INSTAGRAM_ACCESS_TOKEN</code> and{' '}
-              <code>VITE_INSTAGRAM_USER_ID</code> in <code>.env</code> to pull live media.
-            </p>
-          )}
-          {error && (
-            <p className="ig-source-note ig-source-error">
-              Live Instagram fetch failed — using curated posts. ({error})
-            </p>
-          )}
-
           {loading ? (
-            <p className="muted">Loading Instagram feed…</p>
+            <p className="muted">Loading feed…</p>
+          ) : filteredPosts.length === 0 ? (
+            <EmptyState
+              icon={Camera}
+              eyebrow="Feed"
+              title={posts.length === 0 ? 'The feed is waiting' : 'No matches'}
+              description={
+                posts.length === 0
+                  ? 'Be the first vibe on the island — publish a photo post from the admin portal.'
+                  : 'Nothing matches that search or category. Clear filters and try again.'
+              }
+              action={
+                posts.length === 0 && isAdmin ? (
+                  <Link to="/admin/posts" className="btn btn-primary">
+                    Create a post
+                  </Link>
+                ) : posts.length > 0 ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => {
+                      setCat('all')
+                      setQ('')
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                ) : null
+              }
+            />
           ) : (
             <div className="ig-feed">
               {filteredPosts.map((post) => (
@@ -147,60 +211,76 @@ export default function HomeFeed() {
               ))}
             </div>
           )}
+        </section>
+      ) : !error ? (
+        <section className="stack">
+          {loading ? (
+            <p className="muted">Loading map…</p>
+          ) : mapPlaces.length === 0 ? (
+            <EmptyState
+              icon={Compass}
+              eyebrow="Map"
+              title="No places to pin"
+              description="Add venues in admin and they'll light up across Jamaica."
+              action={
+                isAdmin ? (
+                  <Link to="/admin/places" className="btn btn-primary">
+                    Add a place
+                  </Link>
+                ) : null
+              }
+            />
+          ) : (
+            <>
+              <div className="map-panel">
+                <div className="map-canvas">
+                  <PlacesMap
+                    places={mapPlaces}
+                    selectedId={activeId}
+                    onSelect={setSelected}
+                  />
+                </div>
 
-          {!loading && filteredPosts.length === 0 && (
-            <p className="empty">No posts match that search. Try another vibe.</p>
+                {active && (
+                  <div className="map-selected">
+                    <Link to={`/place/${active.id}`} className="map-selected-card">
+                      <img src={active.image} alt="" />
+                      <div>
+                        <strong>{active.name}</strong>
+                        <span>
+                          <Star size={12} fill="currentColor" /> {active.rating} ·{' '}
+                          {priceLabel(active.priceRange)} · {active.area}
+                        </span>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      className={`btn btn-sm${isFavorite(active.id) ? ' btn-primary' : ' btn-outline'}`}
+                      onClick={() => toggleFavorite(active.id)}
+                    >
+                      {isFavorite(active.id) ? 'Saved' : 'Save'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="map-rail">
+                {mapPlaces.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`map-rail-card${activeId === p.id ? ' is-active' : ''}`}
+                    onClick={() => setSelected(p.id)}
+                  >
+                    <img src={p.image} alt="" />
+                    <span>{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </section>
-      ) : (
-        <section className="stack">
-          <div className="map-panel">
-            <div className="map-canvas">
-              <PlacesMap
-                places={mapPlaces}
-                selectedId={selected}
-                onSelect={setSelected}
-              />
-            </div>
-
-            {active && (
-              <div className="map-selected">
-                <Link to={`/place/${active.id}`} className="map-selected-card">
-                  <img src={active.image} alt="" />
-                  <div>
-                    <strong>{active.name}</strong>
-                    <span>
-                      <Star size={12} fill="currentColor" /> {active.rating} ·{' '}
-                      {priceLabel(active.priceRange)} · {active.area}
-                    </span>
-                  </div>
-                </Link>
-                <button
-                  type="button"
-                  className={`btn btn-sm${isFavorite(active.id) ? ' btn-primary' : ' btn-outline'}`}
-                  onClick={() => toggleFavorite(active.id)}
-                >
-                  {isFavorite(active.id) ? 'Saved' : 'Save'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="map-rail">
-            {mapPlaces.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={`map-rail-card${selected === p.id ? ' is-active' : ''}`}
-                onClick={() => setSelected(p.id)}
-              >
-                <img src={p.image} alt="" />
-                <span>{p.name}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+      ) : null}
     </div>
   )
 }

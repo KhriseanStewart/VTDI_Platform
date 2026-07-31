@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, MapPin, ExternalLink } from 'lucide-react'
-import { getPlace } from '../data/outyahData'
 import { formatInstagramTime } from '../lib/instagram'
 import { useApp } from '../context/AppContext'
+import { useData } from '../context/DataContext'
 
 export default function InstagramPostCard({ post }) {
   const [showComments, setShowComments] = useState(false)
+  const { getPlace } = useData()
   const place = getPlace(post.placeId)
   const { isFavorite, toggleFavorite } = useApp()
   const fav = place ? isFavorite(place.id) : false

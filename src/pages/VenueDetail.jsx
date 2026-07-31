@@ -10,20 +10,20 @@ import {
   Check,
   Sparkles,
   Star,
+  SearchX,
+  Camera,
 } from 'lucide-react'
-import {
-  getPlace,
-  CATEGORY_SINGULAR,
-  priceLabel,
-} from '../data/outyahData'
+import { CATEGORY_SINGULAR, priceLabel } from '../data/outyahData'
 import { useApp } from '../context/AppContext'
+import { useData } from '../context/DataContext'
 import { PlaceMap } from '../components/maps/GoogleMaps'
+import EmptyState from '../components/EmptyState'
 import { directionsUrl } from '../lib/maps'
-import { MOCK_INSTAGRAM_POSTS } from '../data/instagramFeed'
 import { formatInstagramTime } from '../lib/instagram'
 
 export default function VenueDetail() {
   const { id } = useParams()
+  const { getPlace, posts, loading } = useData()
   const place = getPlace(id)
   const [tab, setTab] = useState('overview')
   const [activeImage, setActiveImage] = useState(null)
@@ -32,19 +32,26 @@ export default function VenueDetail() {
 
   const reviews = useMemo(() => place?.reviews ?? [], [place])
   const igPosts = useMemo(
-    () => MOCK_INSTAGRAM_POSTS.filter((p) => p.placeId === place?.id),
-    [place],
+    () => posts.filter((p) => p.placeId === place?.id),
+    [posts, place],
   )
   const heroImage = activeImage || place?.images?.[0] || place?.image
 
+  if (loading) return <p className="muted">Loading place…</p>
+
   if (!place) {
     return (
-      <section className="stack">
-        <h1 className="display">Place not found</h1>
-        <Link to="/" className="btn btn-primary">
-          Back to feed
-        </Link>
-      </section>
+      <EmptyState
+        icon={SearchX}
+        eyebrow="404"
+        title="Place not found"
+        description="This venue isn't in Supabase — it may have been removed."
+        action={
+          <Link to="/" className="btn btn-primary">
+            Back to feed
+          </Link>
+        }
+      />
     )
   }
 
@@ -229,7 +236,12 @@ export default function VenueDetail() {
       {tab === 'instagram' && (
         <div className="stack">
           {igPosts.length === 0 ? (
-            <p className="muted">No Instagram posts linked to this place yet.</p>
+            <EmptyState
+              icon={Camera}
+              eyebrow="Posts"
+              title="No posts for this place"
+              description="When the community (or admin) tags this venue, photos and comments will show here."
+            />
           ) : (
             igPosts.map((post) => (
               <article key={post.id} className="ig-card">

@@ -1433,3 +1433,336 @@ p {
   background: var(--primary-soft);
   color: var(--primary);
 }
+
+.empty-state {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 0.55rem;
+  padding: 2.75rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(600px 180px at 50% 0%, rgba(31, 107, 79, 0.12), transparent 70%),
+    color-mix(in oklab, var(--card) 82%, transparent);
+}
+
+.empty-state--warn {
+  background:
+    radial-gradient(600px 180px at 50% 0%, rgba(194, 59, 59, 0.1), transparent 70%),
+    color-mix(in oklab, var(--card) 82%, transparent);
+}
+
+.empty-state--coral {
+  background:
+    radial-gradient(600px 180px at 50% 0%, rgba(224, 80, 122, 0.12), transparent 70%),
+    color-mix(in oklab, var(--card) 82%, transparent);
+}
+
+.empty-state__glow {
+  position: absolute;
+  inset: auto 20% -40% 20%;
+  height: 60%;
+  border-radius: 50%;
+  background: rgba(31, 107, 79, 0.08);
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.empty-state__orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 0.35rem;
+  border-radius: 1.15rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 10px 30px rgba(31, 107, 79, 0.12);
+  animation: empty-float 3.6s ease-in-out infinite;
+}
+
+.empty-state--coral .empty-state__orb {
+  color: #c23b6b;
+  background: rgba(224, 80, 122, 0.12);
+  box-shadow: 0 10px 30px rgba(224, 80, 122, 0.12);
+}
+
+.empty-state--warn .empty-state__orb {
+  color: var(--danger);
+  background: rgba(194, 59, 59, 0.12);
+}
+
+.empty-state__eyebrow {
+  position: relative;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.empty-state__title {
+  position: relative;
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+.empty-state__desc {
+  position: relative;
+  margin: 0;
+  max-width: 28rem;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.empty-state__action {
+  position: relative;
+  margin-top: 0.65rem;
+}
+
+.admin-empty-inline {
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+@keyframes empty-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+
+.auth-form {
+  gap: 0.85rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 500;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.form-ok {
+  color: var(--primary);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+button.text-link {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.code-block {
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  background: #111;
+  color: #d7ffe8;
+  overflow-x: auto;
+  font-size: 0.8rem;
+}
+
+/* Admin */
+.admin-shell {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: 1fr;
+}
+
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 88%, var(--bg));
+}
+
+.admin-brand {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--fg);
+}
+
+.admin-link.is-active {
+  background: var(--primary);
+  color: var(--primary-fg);
+}
+
+.admin-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.admin-main {
+  padding: 1.25rem 1rem 3rem;
+  width: min(1100px, 100%);
+  margin: 0 auto;
+}
+
+.admin-loading,
+.admin-denied {
+  padding: 2rem 1rem;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-stat {
+  padding: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+}
+
+.admin-stat strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.6rem;
+}
+
+.admin-stat span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.admin-form-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+@media (min-width: 900px) {
+  .admin-shell {
+    grid-template-columns: 15rem 1fr;
+  }
+
+  .admin-sidebar {
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+  }
+
+  .admin-nav {
+    flex-direction: column;
+  }
+
+  .admin-stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-main {
+    padding: 2rem 2rem 3rem;
+  }
+}
+

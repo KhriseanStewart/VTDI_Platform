@@ -8,7 +8,7 @@ import {
   CalendarHeart,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
-import { CURRENT_USER } from '../../data/outyahData'
+import { useAuth } from '../../context/AuthContext'
 
 const NAV = [
   { to: '/', label: 'Feed', icon: Home, end: true },
@@ -32,6 +32,13 @@ function Logo() {
 
 export default function Layout() {
   const { plan, favorites } = useApp()
+  const { user, profile, isAdmin } = useAuth()
+
+  const displayName = profile?.name || user?.email?.split('@')[0] || 'Guest'
+  const handle = profile?.handle || (user ? `@${user.email?.split('@')[0]}` : 'Sign in to sync')
+  const avatar =
+    profile?.avatar_url ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || 'guest')}`
 
   return (
     <div className="shell">
@@ -66,13 +73,23 @@ export default function Layout() {
               <span className="count-pill">{favorites.length}</span>
             )}
           </NavLink>
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `sidebar-link${isActive ? ' is-active' : ''}`
+              }
+            >
+              Admin
+            </NavLink>
+          )}
         </nav>
 
-        <Link to="/profile" className="sidebar-user">
-          <img src={CURRENT_USER.avatar} alt="" className="avatar" />
+        <Link to={user ? '/profile' : '/auth?next=/profile'} className="sidebar-user">
+          <img src={avatar} alt="" className="avatar" />
           <span>
-            <strong>{CURRENT_USER.name}</strong>
-            <small>{CURRENT_USER.handle}</small>
+            <strong>{displayName}</strong>
+            <small>{user ? handle : 'Sign in'}</small>
           </span>
         </Link>
       </aside>
