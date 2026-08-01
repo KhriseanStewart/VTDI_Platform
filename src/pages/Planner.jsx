@@ -6,6 +6,7 @@ import { useData } from '../context/DataContext'
 import { RouteMap } from '../components/maps/GoogleMaps'
 import EmptyState from '../components/EmptyState'
 import { directionsUrl } from '../lib/maps'
+import { btn, cn, ui } from '../lib/ui'
 
 export default function Planner() {
   const { plan, removeFromPlan, addToPlan, clearPlan } = useApp()
@@ -15,28 +16,28 @@ export default function Planner() {
   const suggestions = places.filter((p) => !plan.includes(p.id)).slice(0, 6)
 
   return (
-    <div className="stack-lg">
+    <div className={ui.stackLg}>
       <header>
-        <p className="eyebrow">Build your night</p>
-        <h1 className="display">Outing planner</h1>
-        <p className="lede">
+        <p className={ui.eyebrow}>Build your night</p>
+        <h1 className={ui.display}>Outing planner</h1>
+        <p className={ui.lede}>
           Stack stops across Kingston, MoBay, Ochi or Negril — then get directions in order.
         </p>
       </header>
 
       {!user && (
-        <p className="ig-source-note">
-          <Link to="/auth?next=/plan" className="text-link">
+        <p className={ui.igSourceNote}>
+          <Link to="/auth?next=/plan" className={ui.textLink}>
             Sign in
           </Link>{' '}
           to save your outing plan across devices.
         </p>
       )}
 
-      <div className="planner-layout">
-        <div className="stack">
+      <div className="grid gap-5 min-[900px]:grid-cols-2 min-[900px]:items-start">
+        <div className={ui.stack}>
           {loading ? (
-            <p className="muted">Loading…</p>
+            <p className={ui.muted}>Loading…</p>
           ) : stops.length === 0 ? (
             <EmptyState
               icon={Route}
@@ -44,28 +45,33 @@ export default function Planner() {
               title="No stops yet"
               description="Build a route — add places from the feed, or tap a suggestion below."
               action={
-                <Link to="/" className="btn btn-primary">
+                <Link to="/" className={btn(ui.btnPrimary)}>
                   Browse feed
                 </Link>
               }
             />
           ) : (
-            <div className="stack">
-              <ol className="plan-list">
+            <div className={ui.stack}>
+              <ol className="m-0 grid list-none gap-[0.65rem] p-0">
                 {stops.map((p, i) => (
-                  <li key={p.id} className="plan-item">
-                    <span className="plan-num">{i + 1}</span>
-                    <GripVertical size={16} className="muted" />
-                    <img src={p.image} alt="" />
+                  <li
+                    key={p.id}
+                    className="grid grid-cols-[auto_auto_auto_1fr_auto] items-center gap-[0.65rem] rounded-[0.9rem] border border-border bg-card p-[0.65rem]"
+                  >
+                    <span className="grid h-[1.7rem] w-[1.7rem] place-items-center rounded-full bg-primary text-[0.8rem] font-bold text-primary-fg">
+                      {i + 1}
+                    </span>
+                    <GripVertical size={16} className={ui.muted} />
+                    <img src={p.image} alt="" className="h-12 w-12 rounded-xl object-cover" />
                     <div>
-                      <strong>{p.name}</strong>
-                      <span>
+                      <strong className="block">{p.name}</strong>
+                      <span className="inline-flex items-center gap-1 text-[0.78rem] text-muted">
                         <MapPin size={12} /> {p.neighborhood}, {p.area}
                       </span>
                     </div>
                     <button
                       type="button"
-                      className="icon-btn"
+                      className={ui.iconBtn}
                       onClick={() => removeFromPlan(p.id)}
                       aria-label="Remove"
                     >
@@ -74,9 +80,9 @@ export default function Planner() {
                   </li>
                 ))}
               </ol>
-              <div className="action-row">
+              <div className={ui.actionRow}>
                 <a
-                  className="btn btn-primary"
+                  className={btn(ui.btnPrimary)}
                   href={directionsUrl(stops)}
                   target="_blank"
                   rel="noreferrer"
@@ -84,7 +90,7 @@ export default function Planner() {
                   <Navigation size={18} />
                   Get directions
                 </a>
-                <button type="button" className="btn btn-outline" onClick={clearPlan}>
+                <button type="button" className={btn(ui.btnOutline)} onClick={clearPlan}>
                   Clear plan
                 </button>
               </div>
@@ -92,15 +98,15 @@ export default function Planner() {
           )}
         </div>
 
-        <div className="map-panel planner-map">
-          <div className="map-canvas map-canvas-sm">
+        <div className={ui.mapPanel}>
+          <div className={cn(ui.mapCanvas, ui.mapCanvasSm, 'min-[900px]:h-[420px] min-[900px]:min-h-[420px]')}>
             <RouteMap stops={stops} />
           </div>
         </div>
       </div>
 
       <section>
-        <h2>Suggested stops</h2>
+        <h2 className={ui.sectionHeadTitle}>Suggested stops</h2>
         {suggestions.length === 0 ? (
           <EmptyState
             icon={MapPin}
@@ -109,20 +115,24 @@ export default function Planner() {
             description="Once places exist in Supabase, we'll recommend stops you haven't added yet."
           />
         ) : (
-          <div className="suggest-grid">
+          <div className="mt-3.5 grid gap-[0.65rem]">
             {suggestions.map((p) => (
               <button
                 key={p.id}
                 type="button"
-                className="suggest-card"
+                className="grid w-full cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-border bg-card p-[0.55rem] text-left"
                 onClick={() => addToPlan(p.id)}
               >
-                <img src={p.image} alt="" />
+                <img
+                  src={p.image}
+                  alt=""
+                  className="h-[3.25rem] w-[3.25rem] rounded-[0.85rem] object-cover"
+                />
                 <span>
-                  <strong>{p.name}</strong>
-                  <small>{p.area}</small>
+                  <strong className="block">{p.name}</strong>
+                  <small className="block text-muted">{p.area}</small>
                 </span>
-                <em>+ Add</em>
+                <em className="text-[0.85rem] font-bold not-italic text-primary">+ Add</em>
               </button>
             ))}
           </div>

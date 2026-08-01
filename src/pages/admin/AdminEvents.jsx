@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { eventToRow, mapEvent } from '../../lib/data'
 import { supabase } from '../../lib/supabase'
 import { useData } from '../../context/DataContext'
+import { cn, ui } from '../../lib/ui'
 
 const empty = {
   id: '',
@@ -69,35 +70,46 @@ export default function AdminEvents() {
   }
 
   return (
-    <div className="stack-lg">
+    <div className={ui.stackLg}>
       <header>
-        <h1 className="display">Events</h1>
+        <h1 className={ui.display}>Events</h1>
       </header>
-      {error && <p className="form-error">{error}</p>}
+      {error && <p className={ui.formError}>{error}</p>}
 
-      <form className="card-panel stack admin-form" onSubmit={onSave}>
-        <h2>{editing ? 'Edit event' : 'Add event'}</h2>
-        <div className="admin-form-grid">
-          <label className="field">
-            <span>ID</span>
+      <form className={cn(ui.cardPanel, ui.stack)} onSubmit={onSave}>
+        <h2 className="mb-3.5 text-[1.05rem] font-semibold">{editing ? 'Edit event' : 'Add event'}</h2>
+        <div className={ui.adminFormGrid}>
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>ID</span>
             <input
+              className={ui.fieldControl}
               value={form.id}
               onChange={(e) => setField('id', e.target.value)}
               required
               disabled={editing}
             />
           </label>
-          <label className="field">
-            <span>Title</span>
-            <input value={form.title} onChange={(e) => setField('title', e.target.value)} required />
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Title</span>
+            <input
+              className={ui.fieldControl}
+              value={form.title}
+              onChange={(e) => setField('title', e.target.value)}
+              required
+            />
           </label>
-          <label className="field">
-            <span>Type</span>
-            <input value={form.type} onChange={(e) => setField('type', e.target.value)} />
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Type</span>
+            <input
+              className={ui.fieldControl}
+              value={form.type}
+              onChange={(e) => setField('type', e.target.value)}
+            />
           </label>
-          <label className="field">
-            <span>Place</span>
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Place</span>
             <select
+              className={ui.fieldControl}
               value={form.placeId}
               onChange={(e) => {
                 const place = places.find((p) => p.id === e.target.value)
@@ -117,39 +129,57 @@ export default function AdminEvents() {
               ))}
             </select>
           </label>
-          <label className="field">
-            <span>Date label</span>
-            <input value={form.date} onChange={(e) => setField('date', e.target.value)} />
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Date label</span>
+            <input
+              className={ui.fieldControl}
+              value={form.date}
+              onChange={(e) => setField('date', e.target.value)}
+            />
           </label>
-          <label className="field">
-            <span>Time label</span>
-            <input value={form.time} onChange={(e) => setField('time', e.target.value)} />
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Time label</span>
+            <input
+              className={ui.fieldControl}
+              value={form.time}
+              onChange={(e) => setField('time', e.target.value)}
+            />
           </label>
-          <label className="field">
-            <span>Price</span>
-            <input value={form.price} onChange={(e) => setField('price', e.target.value)} />
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Price</span>
+            <input
+              className={ui.fieldControl}
+              value={form.price}
+              onChange={(e) => setField('price', e.target.value)}
+            />
           </label>
-          <label className="field">
-            <span>Image URL</span>
-            <input value={form.image} onChange={(e) => setField('image', e.target.value)} required />
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Image URL</span>
+            <input
+              className={ui.fieldControl}
+              value={form.image}
+              onChange={(e) => setField('image', e.target.value)}
+              required
+            />
           </label>
         </div>
-        <label className="field">
-          <span>Description</span>
+        <label className={ui.field}>
+          <span className={ui.fieldLabel}>Description</span>
           <textarea
+            className={ui.fieldControl}
             rows={3}
             value={form.description}
             onChange={(e) => setField('description', e.target.value)}
           />
         </label>
-        <div className="action-row">
-          <button type="submit" className="btn btn-primary" disabled={busy}>
+        <div className={ui.actionRow}>
+          <button type="submit" className={cn(ui.btn, ui.btnPrimary)} disabled={busy}>
             {busy ? 'Saving…' : editing ? 'Update' : 'Create'}
           </button>
           {editing && (
             <button
               type="button"
-              className="btn btn-outline"
+              className={cn(ui.btn, ui.btnOutline)}
               onClick={() => {
                 setForm(empty)
                 setEditing(false)
@@ -161,38 +191,38 @@ export default function AdminEvents() {
         </div>
       </form>
 
-      <div className="admin-table-wrap">
-        <table className="admin-table">
+      <div className={ui.adminTableWrap}>
+        <table className={ui.adminTable}>
           <thead>
             <tr>
-              <th>Title</th>
-              <th>When</th>
-              <th>Venue</th>
-              <th />
+              <th className={ui.adminTh}>Title</th>
+              <th className={ui.adminTh}>When</th>
+              <th className={ui.adminTh}>Venue</th>
+              <th className={ui.adminTh} />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={4}>
-                  <div className="admin-empty-inline">No events yet — create one above.</div>
+                <td className={ui.adminTd} colSpan={4}>
+                  <div className={ui.adminEmptyInline}>No events yet — create one above.</div>
                 </td>
               </tr>
             ) : (
               rows.map((ev) => (
                 <tr key={ev.id}>
-                  <td>
+                  <td className={ui.adminTd}>
                     <strong>{ev.title}</strong>
-                    <div className="muted">{ev.type}</div>
+                    <div className={ui.muted}>{ev.type}</div>
                   </td>
-                  <td>
+                  <td className={ui.adminTd}>
                     {ev.date} · {ev.time}
                   </td>
-                  <td>{ev.venueName}</td>
-                  <td className="admin-row-actions">
+                  <td className={ui.adminTd}>{ev.venueName}</td>
+                  <td className={cn(ui.adminTd, ui.adminRowActions)}>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline"
+                      className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
                       onClick={() => {
                         setForm(ev)
                         setEditing(true)
@@ -200,7 +230,11 @@ export default function AdminEvents() {
                     >
                       Edit
                     </button>
-                    <button type="button" className="btn btn-sm btn-outline" onClick={() => onDelete(ev.id)}>
+                    <button
+                      type="button"
+                      className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
+                      onClick={() => onDelete(ev.id)}
+                    >
                       Delete
                     </button>
                   </td>

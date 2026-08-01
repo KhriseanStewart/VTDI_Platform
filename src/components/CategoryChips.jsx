@@ -8,6 +8,7 @@ import {
   Landmark,
   Sparkles,
 } from 'lucide-react'
+import { cn, ui } from '../lib/ui'
 
 const CHIPS = [
   { value: 'all', label: 'For You', icon: Sparkles },
@@ -22,12 +23,12 @@ const CHIPS = [
 
 export default function CategoryChips({ selected, onSelect }) {
   return (
-    <div className="chips">
+    <div className={ui.chips}>
       {CHIPS.map(({ value, label, icon: Icon }) => (
         <button
           key={value}
           type="button"
-          className={`chip${selected === value ? ' is-active' : ''}`}
+          className={cn(ui.chip, selected === value && ui.chipActive)}
           onClick={() => onSelect(value)}
         >
           <Icon size={15} />

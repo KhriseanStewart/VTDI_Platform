@@ -4,6 +4,7 @@ import { Heart, MessageCircle, MapPin, ExternalLink } from 'lucide-react'
 import { formatInstagramTime } from '../lib/instagram'
 import { useApp } from '../context/AppContext'
 import { useData } from '../context/DataContext'
+import { cn, ui } from '../lib/ui'
 
 export default function InstagramPostCard({ post }) {
   const [showComments, setShowComments] = useState(false)
@@ -13,36 +14,46 @@ export default function InstagramPostCard({ post }) {
   const fav = place ? isFavorite(place.id) : false
 
   return (
-    <article className="ig-card">
-      <header className="ig-card-head">
-        <img src={post.userAvatar} alt="" className="avatar" />
-        <div className="ig-card-user">
+    <article className={ui.igCard}>
+      <header className={ui.igCardHead}>
+        <img src={post.userAvatar} alt="" className={ui.avatar} />
+        <div className={ui.igCardUser}>
           <strong>@{post.username}</strong>
           {place && (
-            <Link to={`/place/${place.id}`} className="ig-place-link">
+            <Link to={`/place/${place.id}`} className={ui.igPlaceLink}>
               <MapPin size={12} />
               {place.name}
             </Link>
           )}
         </div>
-        <span className="muted">{formatInstagramTime(post.timestamp)}</span>
+        <span className={ui.muted}>{formatInstagramTime(post.timestamp)}</span>
       </header>
 
       {place ? (
-        <Link to={`/place/${place.id}`} className="ig-card-media">
-          <img src={post.mediaUrl} alt={post.caption?.slice(0, 80) || place.name} loading="lazy" />
+        <Link to={`/place/${place.id}`} className={ui.igCardMedia}>
+          <img
+            src={post.mediaUrl}
+            alt={post.caption?.slice(0, 80) || place.name}
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
         </Link>
       ) : (
-        <div className="ig-card-media">
-          <img src={post.mediaUrl} alt="" loading="lazy" />
+        <div className={ui.igCardMedia}>
+          <img
+            src={post.mediaUrl}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
 
-      <div className="ig-card-actions">
+      <div className={ui.igCardActions}>
         {place && (
           <button
             type="button"
-            className={`icon-btn${fav ? ' is-liked' : ''}`}
+            className={cn(ui.iconBtn, fav && ui.iconBtnLiked)}
             aria-label={fav ? 'Remove favorite' : 'Save favorite'}
             onClick={() => toggleFavorite(place.id)}
           >
@@ -51,7 +62,7 @@ export default function InstagramPostCard({ post }) {
         )}
         <button
           type="button"
-          className="icon-btn"
+          className={ui.iconBtn}
           aria-label="Toggle comments"
           onClick={() => setShowComments((v) => !v)}
         >
@@ -59,7 +70,7 @@ export default function InstagramPostCard({ post }) {
         </button>
         {post.permalink && (
           <a
-            className="icon-btn"
+            className={ui.iconBtn}
             href={post.permalink}
             target="_blank"
             rel="noreferrer"
@@ -70,13 +81,13 @@ export default function InstagramPostCard({ post }) {
         )}
       </div>
 
-      <div className="ig-card-body">
-        <p className="ig-likes">
+      <div className={ui.igCardBody}>
+        <p className={ui.igLikes}>
           {(post.likeCount ?? 0).toLocaleString()} likes ·{' '}
           {(post.commentsCount ?? post.comments?.length ?? 0).toLocaleString()} comments
         </p>
         {post.caption && (
-          <p className="ig-caption">
+          <p className={ui.igCaption}>
             <strong>@{post.username}</strong> {post.caption}
           </p>
         )}
@@ -84,7 +95,7 @@ export default function InstagramPostCard({ post }) {
         {(post.comments?.length > 0 || showComments) && (
           <button
             type="button"
-            className="ig-comments-toggle"
+            className={ui.igCommentsToggle}
             onClick={() => setShowComments((v) => !v)}
           >
             {showComments
@@ -94,14 +105,14 @@ export default function InstagramPostCard({ post }) {
         )}
 
         {showComments && (
-          <ul className="ig-comments">
+          <ul className={ui.igComments}>
             {(post.comments || []).map((c) => (
               <li key={c.id}>
                 <strong>@{c.username}</strong> {c.text}
               </li>
             ))}
             {!post.comments?.length && (
-              <li className="muted">No comments on this post yet.</li>
+              <li className={ui.muted}>No comments on this post yet.</li>
             )}
           </ul>
         )}

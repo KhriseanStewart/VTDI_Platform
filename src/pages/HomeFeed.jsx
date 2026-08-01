@@ -19,6 +19,7 @@ import { PlacesMap } from '../components/maps/GoogleMaps'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
+import { cn, ui, btn } from '../lib/ui'
 
 export default function HomeFeed() {
   const [view, setView] = useState('feed')
@@ -79,24 +80,24 @@ export default function HomeFeed() {
   const heading = cat === 'all' ? 'Around Jamaica' : CATEGORY_LABELS[cat]
 
   return (
-    <div className="stack-lg">
-      <header className="feed-header">
-        <div className="feed-header-row">
+    <div className={ui.stackLg}>
+      <header>
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <p className="eyebrow">Wah gwaan, {greetingName}</p>
-            <h1 className="display">Find your next outing</h1>
+            <p className={ui.eyebrow}>Wah gwaan, {greetingName}</p>
+            <h1 className={ui.display}>Find your next outing</h1>
           </div>
-          <div className="view-toggle" role="group" aria-label="Feed or map view">
+          <div className={ui.viewToggle} role="group" aria-label="Feed or map view">
             <button
               type="button"
-              className={`view-toggle-btn${view === 'feed' ? ' is-active' : ''}`}
+              className={cn(ui.viewToggleBtn, view === 'feed' && ui.viewToggleBtnActive)}
               onClick={() => setView('feed')}
             >
               <List size={15} /> Feed
             </button>
             <button
               type="button"
-              className={`view-toggle-btn${view === 'map' ? ' is-active' : ''}`}
+              className={cn(ui.viewToggleBtn, view === 'map' && ui.viewToggleBtnActive)}
               onClick={() => setView('map')}
             >
               <MapIcon size={15} /> Map
@@ -114,7 +115,7 @@ export default function HomeFeed() {
           title="Couldn't reach Supabase"
           description={error}
           action={
-            <button type="button" className="btn btn-primary" onClick={refresh}>
+            <button type="button" className={btn(ui.btnPrimary)} onClick={refresh}>
               Try again
             </button>
           }
@@ -123,14 +124,14 @@ export default function HomeFeed() {
 
       {!error && view === 'feed' && (
         <section>
-          <div className="section-head">
-            <h2>Happening this week</h2>
-            <Link to="/events" className="text-link">
+          <div className={ui.sectionHead}>
+            <h2 className={ui.sectionHeadTitle}>Happening this week</h2>
+            <Link to="/events" className={ui.textLink}>
               See all
             </Link>
           </div>
           {loading ? (
-            <p className="muted">Loading events…</p>
+            <p className={ui.muted}>Loading events…</p>
           ) : events.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
@@ -139,14 +140,14 @@ export default function HomeFeed() {
               description="When admins publish nights out, live music, and premieres, they'll show up here."
               action={
                 isAdmin ? (
-                  <Link to="/admin/events" className="btn btn-primary">
+                  <Link to="/admin/events" className={btn(ui.btnPrimary)}>
                     Add an event
                   </Link>
                 ) : null
               }
             />
           ) : (
-            <div className="event-strip">
+            <div className={ui.eventStrip}>
               {events.map((e) => (
                 <EventCard key={e.id} event={e} compact />
               ))}
@@ -156,25 +157,25 @@ export default function HomeFeed() {
       )}
 
       {!error && (
-        <div className="chips-sticky">
+        <div className={ui.chipsSticky}>
           <CategoryChips selected={cat} onSelect={setCat} />
         </div>
       )}
 
       {!error && view === 'feed' ? (
-        <section className="stack">
-          <div className="section-head">
-            <h2 className="ig-section-title">
+        <section className={ui.stack}>
+          <div className={ui.sectionHead}>
+            <h2 className={cn(ui.sectionHeadTitle, ui.igSectionTitle)}>
               <Camera size={18} />
               {heading}
             </h2>
-            <span className="muted-count">
+            <span className={ui.mutedCount}>
               {loading ? 'Loading…' : `${filteredPosts.length} posts`}
             </span>
           </div>
 
           {loading ? (
-            <p className="muted">Loading feed…</p>
+            <p className={ui.muted}>Loading feed…</p>
           ) : filteredPosts.length === 0 ? (
             <EmptyState
               icon={Camera}
@@ -187,13 +188,13 @@ export default function HomeFeed() {
               }
               action={
                 posts.length === 0 && isAdmin ? (
-                  <Link to="/admin/posts" className="btn btn-primary">
+                  <Link to="/admin/posts" className={btn(ui.btnPrimary)}>
                     Create a post
                   </Link>
                 ) : posts.length > 0 ? (
                   <button
                     type="button"
-                    className="btn btn-outline"
+                    className={btn(ui.btnOutline)}
                     onClick={() => {
                       setCat('all')
                       setQ('')
@@ -205,7 +206,7 @@ export default function HomeFeed() {
               }
             />
           ) : (
-            <div className="ig-feed">
+            <div className={ui.igFeed}>
               {filteredPosts.map((post) => (
                 <InstagramPostCard key={post.id} post={post} />
               ))}
@@ -213,9 +214,9 @@ export default function HomeFeed() {
           )}
         </section>
       ) : !error ? (
-        <section className="stack">
+        <section className={ui.stack}>
           {loading ? (
-            <p className="muted">Loading map…</p>
+            <p className={ui.muted}>Loading map…</p>
           ) : mapPlaces.length === 0 ? (
             <EmptyState
               icon={Compass}
@@ -224,7 +225,7 @@ export default function HomeFeed() {
               description="Add venues in admin and they'll light up across Jamaica."
               action={
                 isAdmin ? (
-                  <Link to="/admin/places" className="btn btn-primary">
+                  <Link to="/admin/places" className={btn(ui.btnPrimary)}>
                     Add a place
                   </Link>
                 ) : null
@@ -232,8 +233,8 @@ export default function HomeFeed() {
             />
           ) : (
             <>
-              <div className="map-panel">
-                <div className="map-canvas">
+              <div className={ui.mapPanel}>
+                <div className={ui.mapCanvas}>
                   <PlacesMap
                     places={mapPlaces}
                     selectedId={activeId}
@@ -242,12 +243,19 @@ export default function HomeFeed() {
                 </div>
 
                 {active && (
-                  <div className="map-selected">
-                    <Link to={`/place/${active.id}`} className="map-selected-card">
-                      <img src={active.image} alt="" />
+                  <div className="flex items-center gap-3 border-t border-border p-[0.85rem]">
+                    <Link
+                      to={`/place/${active.id}`}
+                      className="flex min-w-0 flex-1 items-center gap-3"
+                    >
+                      <img
+                        src={active.image}
+                        alt=""
+                        className="h-14 w-14 rounded-[0.85rem] object-cover"
+                      />
                       <div>
-                        <strong>{active.name}</strong>
-                        <span>
+                        <strong className="block text-[0.92rem]">{active.name}</strong>
+                        <span className="inline-flex items-center gap-1 text-[0.78rem] text-muted">
                           <Star size={12} fill="currentColor" /> {active.rating} ·{' '}
                           {priceLabel(active.priceRange)} · {active.area}
                         </span>
@@ -255,7 +263,11 @@ export default function HomeFeed() {
                     </Link>
                     <button
                       type="button"
-                      className={`btn btn-sm${isFavorite(active.id) ? ' btn-primary' : ' btn-outline'}`}
+                      className={cn(
+                        ui.btn,
+                        ui.btnSm,
+                        isFavorite(active.id) ? ui.btnPrimary : ui.btnOutline,
+                      )}
                       onClick={() => toggleFavorite(active.id)}
                     >
                       {isFavorite(active.id) ? 'Saved' : 'Save'}
@@ -264,15 +276,18 @@ export default function HomeFeed() {
                 )}
               </div>
 
-              <div className="map-rail">
+              <div className="flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {mapPlaces.map((p) => (
                   <button
                     key={p.id}
                     type="button"
-                    className={`map-rail-card${activeId === p.id ? ' is-active' : ''}`}
+                    className={cn(
+                      'flex shrink-0 cursor-pointer items-center gap-[0.55rem] rounded-full border border-border bg-card py-1.5 pl-1.5 pr-[0.7rem] text-left text-[0.82rem] font-semibold',
+                      activeId === p.id && 'border-primary bg-primary-soft text-primary',
+                    )}
                     onClick={() => setSelected(p.id)}
                   >
-                    <img src={p.image} alt="" />
+                    <img src={p.image} alt="" className="h-8 w-8 rounded-full object-cover" />
                     <span>{p.name}</span>
                   </button>
                 ))}

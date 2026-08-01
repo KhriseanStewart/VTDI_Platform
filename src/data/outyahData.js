@@ -28,7 +28,25 @@ export const CATEGORY_COLOR = {
   beach: '#0891b2',
 }
 
-export const AREAS = ['Kingston', 'Montego Bay', 'Ocho Rios', 'Negril']
+/** All 14 Jamaican parishes (used as Area on places) */
+export const AREAS = [
+  'Kingston',
+  'St. Andrew',
+  'St. Thomas',
+  'Portland',
+  'St. Mary',
+  'St. Ann',
+  'Trelawny',
+  'St. James',
+  'Hanover',
+  'Westmoreland',
+  'St. Elizabeth',
+  'Manchester',
+  'Clarendon',
+  'St. Catherine',
+]
+
+export const PARISHES = AREAS
 
 const WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -611,6 +629,20 @@ export function getEvent(id) {
   return events.find((e) => e.id === id)
 }
 
+/** Typical spend bounds (JMD) stored in price_range */
+export const PRICE_MIN = 1000
+export const PRICE_MAX = 50000
+
+const LEGACY_PRICE = { 1: 1000, 2: 2000, 3: 3000, 4: 4000 }
+
+export function normalizePriceRange(range) {
+  const n = Number(range)
+  if (!Number.isFinite(n) || n <= 0) return PRICE_MIN
+  const amount = n >= 1000 ? n : (LEGACY_PRICE[n] ?? PRICE_MIN)
+  return Math.min(PRICE_MAX, Math.max(PRICE_MIN, Math.round(amount)))
+}
+
 export function priceLabel(range) {
-  return '$'.repeat(range)
+  const amount = normalizePriceRange(range)
+  return `J$${amount.toLocaleString('en-US')}`
 }

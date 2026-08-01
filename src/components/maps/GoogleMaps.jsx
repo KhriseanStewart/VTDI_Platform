@@ -13,12 +13,13 @@ import {
   hasMapsKey,
   categoryMarkerIcon,
 } from '../../lib/maps'
+import { ui } from '../../lib/ui'
 
 const containerStyle = { width: '100%', height: '100%' }
 
 function MapsMissing() {
   return (
-    <div className="map-fallback">
+    <div className={ui.mapFallback}>
       <p>Add a Google Maps API key to <code>.env</code> to enable the map.</p>
     </div>
   )
@@ -26,17 +27,18 @@ function MapsMissing() {
 
 function MapsLoading() {
   return (
-    <div className="map-fallback">
+    <div className={ui.mapFallback}>
       <p>Loading map…</p>
     </div>
   )
 }
 
-function useGoogleMaps() {
+export function useGoogleMaps() {
   const enabled = hasMapsKey()
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'outyah-google-maps',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY || '',
+    libraries: ['places'],
   })
   return { enabled, isLoaded: enabled && isLoaded, loadError }
 }
@@ -68,7 +70,7 @@ export function PlacesMap({ places, selectedId, onSelect }) {
   if (!enabled) return <MapsMissing />
   if (loadError) {
     return (
-      <div className="map-fallback">
+      <div className={ui.mapFallback}>
         <p>Couldn’t load Google Maps. Check your API key and billing.</p>
       </div>
     )
@@ -110,7 +112,7 @@ export function PlaceMap({ place }) {
   if (!enabled) return <MapsMissing />
   if (loadError) {
     return (
-      <div className="map-fallback">
+      <div className={ui.mapFallback}>
         <p>Couldn’t load Google Maps.</p>
       </div>
     )
@@ -170,7 +172,7 @@ export function RouteMap({ stops }) {
   if (!enabled) return <MapsMissing />
   if (loadError) {
     return (
-      <div className="map-fallback">
+      <div className={ui.mapFallback}>
         <p>Couldn’t load Google Maps.</p>
       </div>
     )
@@ -179,7 +181,7 @@ export function RouteMap({ stops }) {
 
   if (stops.length === 0) {
     return (
-      <div className="map-fallback">
+      <div className={ui.mapFallback}>
         <p>Add stops to see your route on the map.</p>
       </div>
     )

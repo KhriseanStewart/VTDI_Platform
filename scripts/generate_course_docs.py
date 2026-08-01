@@ -276,7 +276,10 @@ def write_design():
     pdf.h1("1. Architecture Overview")
     pdf.body(
         "OutYah uses a client-server architecture: a React SPA on Vercel communicates with "
-        "Supabase (Auth, Postgres, Storage) and Google Maps Platform APIs."
+        "Supabase (Auth, Postgres, Storage) and Google Maps Platform APIs. The browser owns "
+        "presentation and interaction, while Supabase provides the durable data and security "
+        "boundary. Context providers keep authentication, catalog data, and the user's saved "
+        "outing state available across routes without tightly coupling page components."
     )
     pdf.mono(
         "Browser (React/Vite)\n"
@@ -294,6 +297,14 @@ def write_design():
         "Version control: GitHub",
     ]:
         pdf.bullet(t)
+    pdf.h2("2.1 Selection rationale")
+    pdf.body(
+        "React and Vite were selected for fast component-driven development and a lightweight "
+        "production build. Supabase reduces backend setup while retaining a relational database, "
+        "row-level security, authentication, and storage. Google Maps supplies reliable map tiles, "
+        "markers, and routing. Vercel provides automatic deployment from GitHub and supports the "
+        "single-page rewrite required by React Router."
+    )
     pdf.h1("3. Database Design (ERD description)")
     pdf.body("Core entities and relationships:")
     for t in [
@@ -321,11 +332,31 @@ def write_design():
         "Storage bucket media: public read, admin write",
     ]:
         pdf.bullet(t)
+    pdf.body(
+        "The client uses only the Supabase anon key. Authorization is enforced in PostgreSQL rather "
+        "than by hiding controls in the browser. Admin screens still check profiles.role for a "
+        "clear user experience, but RLS remains the final enforcement layer. Database passwords "
+        "and the service-role key are server-only and excluded from Git."
+    )
     pdf.h1("5. Interface Design")
     pdf.body(
         "Public shell: desktop sidebar + mobile bottom nav. Home uses a Feed/Map segmented "
         "control. Admin uses a separate layout without public bottom navigation. Empty states "
         "provide clear CTAs when catalogs are empty."
+    )
+    pdf.h2("5.1 Responsive behavior")
+    for t in [
+        "Desktop: persistent left navigation and multi-column content grids.",
+        "Mobile: fixed bottom navigation, horizontally scrollable chips, and single-column forms.",
+        "Feed cards emphasize photography with minimal borders and no heavy elevation.",
+        "Admin tables scroll horizontally on small screens while forms collapse to one column.",
+    ]:
+        pdf.bullet(t)
+    pdf.h2("5.2 Data-state behavior")
+    pdf.body(
+        "Every catalog screen distinguishes loading, populated, empty, and error states. Empty "
+        "states explain what is missing and provide an appropriate action, such as adding the "
+        "first place for an administrator or returning to discovery for a regular user."
     )
     pdf.h1("6. Key UML-style Flows")
     pdf.h2("6.1 Discovery to Plan")
@@ -347,92 +378,77 @@ def write_design():
         "Client never receives service_role key",
     ]:
         pdf.bullet(t)
+    pdf.h1("8. Module Responsibilities")
+    for t in [
+        "AuthContext: session lifecycle, profile lookup, sign-in, sign-up, sign-out, admin role.",
+        "DataContext: Supabase catalog queries, refresh, and in-memory lookup helpers.",
+        "AppContext: favorites and ordered plan state, including per-user persistence.",
+        "lib/data.js: database-row to UI-model mapping and Supabase query functions.",
+        "pages/admin: protected dashboard and CRUD interfaces.",
+    ]:
+        pdf.bullet(t)
     out = DOCS / "03_OutYah_System_Design_Document.pdf"
     pdf.output(out)
     return out
 
 
-def write_progress_reports():
-    pdf = Doc("OutYah - Weekly Progress Reports")
+def write_prototype_notes():
+    pdf = Doc("OutYah - Prototype Version 1")
     pdf.cover(
-        "Weekly Progress Reports (Weeks 1-5)",
+        "Prototype Version 1",
         TAGLINE,
-        "Professional Practices - Progress through July 31, 2026",
+        "Week 4 Deliverable (July 20 - July 24, 2026) - Development I",
     )
-    weeks = [
-        (
-            "Week 1 (June 29 - July 3) - Project Planning",
-            [
-                "Selected OutYah as the Special Project (Jamaica outing discovery).",
-                "Defined problem, objectives, and scope.",
-                "Prepared Project Proposal deliverable.",
-                "Initialized GitHub repository and Vite React baseline.",
-            ],
-            [
-                "Finalize branding and confirm tech stack (React + Supabase + Maps).",
-            ],
-        ),
-        (
-            "Week 2 (July 6 - July 10) - Requirements Analysis",
-            [
-                "Gathered requirements from product brief and mockup reference.",
-                "Authored user stories and FR/NFR list.",
-                "Produced SRS document and screen inventory.",
-            ],
-            [
-                "Begin database/ERD and UI structure for design week.",
-            ],
-        ),
-        (
-            "Week 3 (July 13 - July 17) - System Design",
-            [
-                "Designed Supabase schema (places, events, posts, favorites, plan).",
-                "Documented architecture, RLS, and interface approach.",
-                "Selected hosting (Vercel) and Maps integration approach.",
-            ],
-            [
-                "Start implementing routing, layout, and core pages.",
-            ],
-        ),
-        (
-            "Week 4 (July 20 - July 24) - Development I / Prototype v1",
-            [
-                "Implemented Feed/Map toggle, venue cards, events, planner, favorites.",
-                "Integrated Google Maps with category-colored pins and directions.",
-                "Fixed Vercel SPA 404s with vercel.json rewrites.",
-                "Shipped Prototype Version 1 to GitHub + Vercel.",
-            ],
-            [
-                "Wire Supabase auth/admin and remove local-only data dependency.",
-            ],
-        ),
-        (
-            "Week 5 (July 27 - July 31) - Development II / Beta",
-            [
-                "Added Supabase client, Auth, DataContext, and admin portal CRUD.",
-                "Applied remote schema/RLS/storage; removed local DB fallbacks.",
-                "Added polished empty states across public and admin views.",
-                "Prepared Beta package documentation for submission.",
-            ],
-            [
-                "Week 6: testing report, user manual, bug fixes.",
-                "Week 7: final polish, presentation, reflection.",
-            ],
-        ),
-    ]
-    for title, done, next_items in weeks:
-        pdf.add_page()
-        pdf.h1(title)
-        pdf.h2("Completed")
-        for t in done:
-            pdf.bullet(t)
-        pdf.h2("Next / blockers")
-        for t in next_items:
-            pdf.bullet(t)
-        pdf.h2("Repo / demo")
-        pdf.bullet(f"GitHub: {REPO}")
-        pdf.bullet(f"Live: {LIVE}")
-    out = DOCS / "04_OutYah_Weekly_Progress_Reports_Weeks_1-5.pdf"
+    pdf.add_page()
+    pdf.h1("1. Prototype Objective")
+    pdf.body(
+        "Prototype Version 1 demonstrates the complete public discovery journey before the final "
+        "backend and administration work. It validates navigation, responsive layouts, visual "
+        "hierarchy, venue discovery, maps, and outing planning using representative content."
+    )
+    pdf.h1("2. Core Modules Implemented")
+    for t in [
+        "Responsive application shell: desktop sidebar and mobile bottom navigation.",
+        "Home discovery feed with search, category chips, event strip, and Feed/Map switch.",
+        "Venue detail gallery, metadata, reviews, hours, favorites, and plan actions.",
+        "Favorites grid and outing planner with suggested stops.",
+        "Events list and event detail routes.",
+        "Google Maps markers, category differentiation, and directions links.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("3. Prototype Navigation Flow")
+    pdf.numbered(1, "Open the home feed and search or choose a category.")
+    pdf.numbered(2, "Switch to Map to discover venues geographically.")
+    pdf.numbered(3, "Open a venue and review its gallery, hours, and location.")
+    pdf.numbered(4, "Favorite the venue or add it to the outing plan.")
+    pdf.numbered(5, "Open the planner and launch Google Maps directions.")
+    pdf.h1("4. Interface Refinement")
+    pdf.body(
+        "Early versions used heavy card shadows and rounded containers. Prototype feedback led "
+        "to a flatter, image-led visual language: photos remain rounded, captions sit directly "
+        "on the page background, and borders replace large shadows. This makes scanning faster "
+        "and better matches the social discovery concept."
+    )
+    pdf.h1("5. Prototype Verification")
+    for t in [
+        "Vite production build completed successfully.",
+        "Primary routes were manually exercised on desktop and mobile widths.",
+        "Vercel SPA rewrite was added so deep links no longer return 404.",
+        "Google Maps API was enabled for map, detail, and planner surfaces.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("6. Gaps Carried into Week 5")
+    for t in [
+        "Replace local/sample catalog dependency with Supabase.",
+        "Add real authentication and user-specific persistence.",
+        "Create role-protected admin content management.",
+        "Improve loading, error, and empty data states.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("7. Prototype Access")
+    pdf.bullet(f"GitHub: {REPO}")
+    pdf.bullet(f"Live deployment: {LIVE}")
+    out = DOCS / "04_OutYah_Prototype_Version_1.pdf"
     pdf.output(out)
     return out
 
@@ -462,7 +478,23 @@ def write_beta_notes():
         "Vercel hosting with SPA rewrites",
     ]:
         pdf.bullet(t)
-    pdf.h1("3. How to run")
+    pdf.h1("3. Backend Integration")
+    pdf.body(
+        "The beta uses Supabase as the only catalog database. DataContext loads places, events, "
+        "posts, and comments from PostgREST. AuthContext manages email/password sessions and "
+        "profile roles. AppContext synchronizes favorites and ordered plan stops for signed-in "
+        "users while retaining device-local selections for guests."
+    )
+    pdf.h2("3.1 Admin workflow")
+    for t in [
+        "Admin signs in and is authorized through profiles.role.",
+        "Dashboard displays catalog totals.",
+        "Places, events, and posts can be created, updated, and deleted.",
+        "Place slugs are generated from name and append area when duplicated.",
+        "Public pages refresh from Supabase after admin changes.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("4. How to run")
     pdf.mono(
         "bun install\n"
         "cp .env.example .env   # add Supabase + Maps keys\n"
@@ -470,19 +502,28 @@ def write_beta_notes():
         "# optional schema apply:\n"
         "bun scripts/apply_supabase_schema.mjs\n"
     )
-    pdf.h1("4. Database script location")
+    pdf.h1("5. Database script location")
     pdf.bullet("supabase/migrations/001_init.sql - schema + RLS")
     pdf.bullet("supabase/seed.sql - optional sample seed")
     pdf.bullet("supabase/full_setup.sql - combined apply script")
     pdf.bullet("docs/database/ copies for submission package")
-    pdf.h1("5. Known limitations")
+    pdf.h1("6. Beta Acceptance Checks")
+    for t in [
+        "Production build passes.",
+        "Supabase tables, RLS policies, and storage bucket are created.",
+        "Catalog may be intentionally empty; polished empty states render correctly.",
+        "Admin routes reject signed-out and non-admin users.",
+        "Vercel deep links resolve through the SPA rewrite.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("7. Known limitations")
     for t in [
         "Live Instagram Graph sync not required; posts managed in admin.",
         "Plan stop drag-reorder UI is visual only; order follows add sequence.",
         "Email confirmation depends on Supabase Auth project settings.",
     ]:
         pdf.bullet(t)
-    pdf.h1("6. Next phase (Week 6+)")
+    pdf.h1("8. Next phase (Week 6+)")
     pdf.bullet("Formal testing report and user manual")
     pdf.bullet("Bug bash and UI polish")
     pdf.bullet("Final presentation package")
@@ -527,11 +568,8 @@ def write_submission_checklist():
 
 if __name__ == "__main__":
     outs = [
-        write_submission_checklist(),
-        write_proposal(),
-        write_srs(),
         write_design(),
-        write_progress_reports(),
+        write_prototype_notes(),
         write_beta_notes(),
     ]
     for p in outs:

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
+import { cn, ui } from '../../lib/ui'
 
 const NAV = [
   { to: '/', label: 'Feed', icon: Home, end: true },
@@ -19,12 +20,12 @@ const NAV = [
 
 function Logo() {
   return (
-    <Link to="/" className="logo">
-      <span className="logo-mark">
+    <Link to="/" className={ui.logo}>
+      <span className={ui.logoMark}>
         <CalendarHeart size={20} />
       </span>
-      <span className="logo-text">
-        Out<span>Yah</span>
+      <span className={ui.logoText}>
+        Out<span className="text-primary">Yah</span>
       </span>
     </Link>
   )
@@ -41,43 +42,55 @@ export default function Layout() {
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || 'guest')}`
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
+    <div className={ui.shell}>
+      <aside className={ui.sidebar}>
         <Logo />
-        <nav className="sidebar-nav">
+        <nav className={ui.sidebarNav}>
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `sidebar-link${isActive ? ' is-active' : ''}`
+                cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
               }
             >
-              <Icon size={19} />
-              {label}
-              {to === '/plan' && plan.length > 0 && (
-                <span className="count-pill">{plan.length}</span>
+              {({ isActive }) => (
+                <>
+                  <Icon size={19} />
+                  {label}
+                  {to === '/plan' && plan.length > 0 && (
+                    <span className={cn(ui.countPill, isActive && ui.countPillOnActive)}>
+                      {plan.length}
+                    </span>
+                  )}
+                </>
               )}
             </NavLink>
           ))}
           <NavLink
             to="/favorites"
             className={({ isActive }) =>
-              `sidebar-link${isActive ? ' is-active' : ''}`
+              cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
             }
           >
-            <Heart size={19} />
-            Favorites
-            {favorites.length > 0 && (
-              <span className="count-pill">{favorites.length}</span>
+            {({ isActive }) => (
+              <>
+                <Heart size={19} />
+                Favorites
+                {favorites.length > 0 && (
+                  <span className={cn(ui.countPill, isActive && ui.countPillOnActive)}>
+                    {favorites.length}
+                  </span>
+                )}
+              </>
             )}
           </NavLink>
           {isAdmin && (
             <NavLink
               to="/admin"
               className={({ isActive }) =>
-                `sidebar-link${isActive ? ' is-active' : ''}`
+                cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
               }
             >
               Admin
@@ -85,35 +98,37 @@ export default function Layout() {
           )}
         </nav>
 
-        <Link to={user ? '/profile' : '/auth?next=/profile'} className="sidebar-user">
-          <img src={avatar} alt="" className="avatar" />
+        <Link to={user ? '/profile' : '/auth?next=/profile'} className={ui.sidebarUser}>
+          <img src={avatar} alt="" className={ui.avatar} />
           <span>
-            <strong>{displayName}</strong>
-            <small>{user ? handle : 'Sign in'}</small>
+            <strong className="block">{displayName}</strong>
+            <small className="block text-[0.75rem] text-muted">
+              {user ? handle : 'Sign in'}
+            </small>
           </span>
         </Link>
       </aside>
 
-      <div className="shell-main">
-        <main className="page">
+      <div className={ui.shellMain}>
+        <main className={ui.page}>
           <Outlet />
         </main>
       </div>
 
-      <nav className="bottom-nav">
+      <nav className={ui.bottomNav}>
         {NAV.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) =>
-              `bottom-link${isActive ? ' is-active' : ''}`
+              cn(ui.bottomLink, isActive && ui.bottomLinkActive)
             }
           >
             <Icon size={22} strokeWidth={2} />
             {label}
             {to === '/plan' && plan.length > 0 && (
-              <span className="badge-dot">{plan.length}</span>
+              <span className={ui.badgeDot}>{plan.length}</span>
             )}
           </NavLink>
         ))}

@@ -5,6 +5,7 @@ import EmptyState from '../components/EmptyState'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
+import { btn, ui } from '../lib/ui'
 
 export default function Favorites() {
   const { favorites } = useApp()
@@ -13,16 +14,16 @@ export default function Favorites() {
   const list = favorites.map((id) => getPlace(id)).filter(Boolean)
 
   return (
-    <div className="stack-lg">
+    <div className={ui.stackLg}>
       <header>
-        <p className="eyebrow">Saved for later</p>
-        <h1 className="display">Favorites</h1>
+        <p className={ui.eyebrow}>Saved for later</p>
+        <h1 className={ui.display}>Favorites</h1>
       </header>
 
       {!user && (
-        <p className="ig-source-note">
+        <p className={ui.igSourceNote}>
           Signed out — favorites stay on this device.{' '}
-          <Link to="/auth?next=/favorites" className="text-link">
+          <Link to="/auth?next=/favorites" className={ui.textLink}>
             Sign in
           </Link>{' '}
           to sync across devices.
@@ -30,7 +31,7 @@ export default function Favorites() {
       )}
 
       {loading ? (
-        <p className="muted">Loading…</p>
+        <p className={ui.muted}>Loading…</p>
       ) : list.length === 0 ? (
         <EmptyState
           icon={Heart}
@@ -39,13 +40,13 @@ export default function Favorites() {
           title="Your list is empty"
           description="Tap the heart on any place in the feed or map — your shortlist will live here."
           action={
-            <Link to="/" className="btn btn-primary">
+            <Link to="/" className={btn(ui.btnPrimary)}>
               Discover places
             </Link>
           }
         />
       ) : (
-        <div className="place-grid">
+        <div className={ui.placeGrid}>
           {list.map((p) => (
             <PlaceCard key={p.id} place={p} />
           ))}

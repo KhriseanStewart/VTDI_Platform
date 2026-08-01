@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { btn, cn, ui } from '../lib/ui'
 
 export default function AuthPage() {
   const { configured, signIn, signUp, user, loading } = useAuth()
@@ -42,10 +43,10 @@ export default function AuthPage() {
 
   if (!configured) {
     return (
-      <div className="stack-lg auth-page">
-        <h1 className="display">Auth unavailable</h1>
-        <p className="lede">Add Supabase URL and anon key to your environment.</p>
-        <Link to="/" className="btn btn-primary">
+      <div className={ui.stackLg}>
+        <h1 className={ui.display}>Auth unavailable</h1>
+        <p className={ui.lede}>Add Supabase URL and anon key to your environment.</p>
+        <Link to="/" className={btn(ui.btnPrimary)}>
           Back home
         </Link>
       </div>
@@ -53,17 +54,18 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="stack-lg auth-page">
+    <div className={ui.stackLg}>
       <header>
-        <p className="eyebrow">OutYah account</p>
-        <h1 className="display">{mode === 'signin' ? 'Sign in' : 'Create account'}</h1>
+        <p className={ui.eyebrow}>OutYah account</p>
+        <h1 className={ui.display}>{mode === 'signin' ? 'Sign in' : 'Create account'}</h1>
       </header>
 
-      <form className="auth-form card-panel stack" onSubmit={onSubmit}>
+      <form className={cn(ui.cardPanel, ui.stack, 'gap-3.5')} onSubmit={onSubmit}>
         {mode === 'signup' && (
-          <label className="field">
-            <span>Name</span>
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Name</span>
             <input
+              className={ui.fieldControl}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
@@ -71,9 +73,10 @@ export default function AuthPage() {
             />
           </label>
         )}
-        <label className="field">
-          <span>Email</span>
+        <label className={ui.field}>
+          <span className={ui.fieldLabel}>Email</span>
           <input
+            className={ui.fieldControl}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -81,9 +84,10 @@ export default function AuthPage() {
             autoComplete="email"
           />
         </label>
-        <label className="field">
-          <span>Password</span>
+        <label className={ui.field}>
+          <span className={ui.fieldLabel}>Password</span>
           <input
+            className={ui.fieldControl}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -92,25 +96,33 @@ export default function AuthPage() {
             autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
           />
         </label>
-        {error && <p className="form-error">{error}</p>}
-        {message && <p className="form-ok">{message}</p>}
-        <button type="submit" className="btn btn-primary" disabled={busy}>
+        {error && <p className={ui.formError}>{error}</p>}
+        {message && <p className={ui.formOk}>{message}</p>}
+        <button type="submit" className={btn(ui.btnPrimary)} disabled={busy}>
           {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Sign up'}
         </button>
       </form>
 
-      <p className="muted">
+      <p className={ui.muted}>
         {mode === 'signin' ? (
           <>
             New here?{' '}
-            <button type="button" className="text-link" onClick={() => setMode('signup')}>
+            <button
+              type="button"
+              className={cn('cursor-pointer border-none bg-transparent p-0', ui.textLink)}
+              onClick={() => setMode('signup')}
+            >
               Create an account
             </button>
           </>
         ) : (
           <>
             Already have an account?{' '}
-            <button type="button" className="text-link" onClick={() => setMode('signin')}>
+            <button
+              type="button"
+              className={cn('cursor-pointer border-none bg-transparent p-0', ui.textLink)}
+              onClick={() => setMode('signin')}
+            >
               Sign in
             </button>
           </>

@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react'
+import { ui } from '../lib/ui'
 
 export default function SearchBar({
   value,
@@ -6,10 +7,11 @@ export default function SearchBar({
   placeholder = 'Search places, vibes, or areas…',
 }) {
   return (
-    <label className="search-bar">
+    <label className={ui.searchBar}>
       <Search size={18} />
       <input
         type="search"
+        className={ui.searchInput}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
