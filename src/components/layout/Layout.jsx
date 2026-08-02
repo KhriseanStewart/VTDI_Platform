@@ -1,4 +1,4 @@
-import { NavLink, Outlet, Link } from 'react-router-dom'
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import {
   Home,
   Route,
@@ -6,6 +6,10 @@ import {
   User,
   Heart,
   CalendarHeart,
+  LayoutDashboard,
+  MapPin,
+  Calendar,
+  Camera,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
@@ -16,6 +20,13 @@ const NAV = [
   { to: '/plan', label: 'Plan', icon: Route },
   { to: '/events', label: 'Events', icon: Ticket },
   { to: '/profile', label: 'Profile', icon: User },
+]
+
+const ADMIN_NAV = [
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/places', label: 'Places', icon: MapPin },
+  { to: '/admin/events', label: 'Events', icon: Calendar },
+  { to: '/admin/posts', label: 'Posts', icon: Camera },
 ]
 
 function Logo() {
@@ -34,6 +45,8 @@ function Logo() {
 export default function Layout() {
   const { plan, favorites } = useApp()
   const { user, profile, isAdmin } = useAuth()
+  const { pathname } = useLocation()
+  const onAdmin = pathname.startsWith('/admin')
 
   const displayName = profile?.name || user?.email?.split('@')[0] || 'Guest'
   const handle = profile?.handle || (user ? `@${user.email?.split('@')[0]}` : 'Sign in to sync')
@@ -86,15 +99,26 @@ export default function Layout() {
               </>
             )}
           </NavLink>
+
           {isAdmin && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
-              }
-            >
-              Admin
-            </NavLink>
+            <>
+              <p className="mt-4 px-3 text-[0.7rem] font-bold uppercase tracking-wider text-muted">
+                Admin
+              </p>
+              {ADMIN_NAV.map(({ to, label, icon: Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
+                  }
+                >
+                  <Icon size={19} />
+                  {label}
+                </NavLink>
+              ))}
+            </>
           )}
         </nav>
 
@@ -111,6 +135,29 @@ export default function Layout() {
 
       <div className={ui.shellMain}>
         <main className={ui.page}>
+          {isAdmin && onAdmin && (
+            <nav
+              className="mb-4 flex gap-1 overflow-x-auto pb-1 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              aria-label="Admin"
+            >
+              {ADMIN_NAV.map(({ to, label, icon: Icon, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    cn(
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[0.8rem] font-semibold text-fg',
+                      isActive && 'border-primary bg-primary text-on-primary',
+                    )
+                  }
+                >
+                  <Icon size={14} />
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+          )}
           <Outlet />
         </main>
       </div>

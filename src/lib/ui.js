@@ -1,6 +1,8 @@
-/** Join class names, skipping falsy values */
+import { twMerge } from 'tailwind-merge'
+
+/** Join class names; later utilities win over conflicts (bg-*, text-*, etc.) */
 export function cn(...parts) {
-  return parts.filter(Boolean).join(' ')
+  return twMerge(...parts.filter(Boolean))
 }
 
 /** Shared Tailwind recipes (replaces former index.css component classes) */
@@ -17,17 +19,17 @@ export const ui = {
     'relative flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[0.68rem] font-semibold text-muted',
   bottomLinkActive: 'text-primary',
   badgeDot:
-    'absolute top-0 right-[calc(50%-1.4rem)] min-w-4 h-4 rounded-full bg-primary px-1 text-center text-[0.62rem] leading-4 text-primary-fg',
+    'absolute top-0 right-[calc(50%-1.4rem)] min-w-4 h-4 rounded-full bg-primary px-1 text-center text-[0.62rem] leading-4 text-on-primary',
   logo: 'inline-flex items-center gap-2.5 p-1.5',
-  logoMark: 'grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-fg',
+  logoMark: 'grid h-9 w-9 place-items-center rounded-xl bg-primary text-on-primary',
   logoText: 'font-display text-xl font-extrabold',
   sidebarNav: 'mt-6 flex flex-col gap-1',
   sidebarLink:
     'flex items-center gap-3 rounded-[0.85rem] px-3 py-2.5 text-[0.92rem] font-semibold text-fg hover:bg-primary-soft',
-  sidebarLinkActive: 'bg-primary text-primary-fg hover:bg-primary',
+  sidebarLinkActive: 'bg-primary text-on-primary hover:bg-primary',
   countPill:
     'ml-auto min-w-[1.4rem] rounded-full bg-primary-soft px-1.5 py-0.5 text-center text-[0.72rem] text-primary',
-  countPillOnActive: 'bg-white/20 text-primary-fg',
+  countPillOnActive: 'bg-white/20 text-on-primary',
   sidebarUser:
     'mt-auto flex items-center gap-3 rounded-2xl border border-border bg-card p-2.5',
   avatar: 'h-10 w-10 rounded-full object-cover bg-border',
@@ -48,9 +50,9 @@ export const ui = {
 
   // buttons
   btn: 'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border border-transparent bg-card px-4 py-2.5 text-[0.9rem] font-semibold text-fg',
-  btnPrimary: 'bg-primary text-primary-fg',
-  btnSecondary: 'bg-primary-soft text-primary',
-  btnOutline: 'border-border bg-card',
+  btnPrimary: 'border-transparent bg-primary text-on-primary hover:bg-primary/90',
+  btnSecondary: 'border-transparent bg-primary-soft text-primary hover:bg-primary-soft',
+  btnOutline: 'border-border bg-card text-fg hover:bg-primary-soft hover:text-primary',
   btnSm: 'px-3.5 py-1.5 text-[0.8rem]',
   iconBtn:
     'cursor-pointer rounded-lg border-none bg-transparent p-1.5 text-muted hover:bg-primary-soft hover:text-primary',
@@ -75,7 +77,7 @@ export const ui = {
   chipsSticky:
     'sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-bg)_88%,transparent)] py-2 backdrop-blur-sm',
   chip: 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-[0.85rem] font-semibold text-fg',
-  chipActive: 'border-primary bg-primary text-primary-fg',
+  chipActive: 'border-primary bg-primary text-on-primary',
 
   // place card
   placeGrid: 'grid grid-cols-1 gap-[1.15rem] sm:grid-cols-2 min-[1100px]:grid-cols-3',
@@ -92,12 +94,12 @@ export const ui = {
     'absolute inset-x-0 bottom-0 flex flex-wrap gap-1.5 bg-gradient-to-t from-black/55 to-transparent px-3 pb-3 pt-8',
   tag: 'rounded-full bg-white/18 px-2 py-0.5 text-[0.68rem] font-bold text-white',
   tagGreen: 'bg-primary-soft text-primary',
-  tagGold: 'bg-accent text-accent-fg',
+  tagGold: 'bg-accent text-on-accent',
   tagDanger: 'bg-danger/15 text-danger',
   placeCardBody: 'block pt-3',
   placeCardTitleRow: 'flex justify-between gap-2',
   placeCardTitle: 'text-base font-bold leading-snug',
-  rating: 'inline-flex items-center gap-1 text-[0.88rem] font-bold text-accent-fg [&_svg]:text-accent',
+  rating: 'inline-flex items-center gap-1 text-[0.88rem] font-bold text-on-accent [&_svg]:text-accent',
   placeMeta: 'mt-1.5 flex items-center gap-1.5 text-[0.82rem] text-muted',
   placeSubmeta: 'mt-1.5 flex items-center gap-1.5 text-[0.82rem] text-muted',
 
@@ -108,9 +110,17 @@ export const ui = {
   eventCardCompact: 'w-64 shrink-0',
   eventCardMedia: 'relative aspect-[16/10] overflow-hidden rounded-[0.9rem]',
   eventType:
-    'absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-[0.7rem] font-bold text-accent-fg',
+    'absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-[0.7rem] font-bold text-on-accent',
   eventWhen:
-    'absolute bottom-3 left-3 rounded-[0.7rem] bg-white/92 px-2.5 py-1.5 text-[0.72rem] font-bold',
+    'absolute bottom-3 left-3 rounded-[0.7rem] bg-white/92 px-2.5 py-1.5 text-[0.72rem] font-bold text-fg',
+  eventBadgeRow: 'absolute left-3 top-3 flex flex-wrap gap-1.5',
+  eventBadge:
+    'rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide',
+  eventBadgePast: 'bg-fg/80 text-on-primary',
+  eventBadgeLive: 'bg-danger text-on-primary',
+  eventBadgeUpcoming: 'bg-primary text-on-primary',
+  eventBadgeRecurring: 'bg-accent text-on-accent',
+  eventPastCard: 'opacity-70',
   eventCardBody: 'pt-3',
   eventCardBodyTitle: 'text-[0.98rem] font-bold',
   eventCardBodyMeta: 'mt-1.5 flex items-center gap-1.5 text-[0.82rem] text-muted',
@@ -123,8 +133,8 @@ export const ui = {
 
   viewToggle: 'inline-flex shrink-0 items-center rounded-full border border-border bg-card p-0.5',
   viewToggleBtn:
-    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border-none bg-transparent px-3.5 py-1.5 text-[0.82rem] font-semibold text-muted',
-  viewToggleBtnActive: 'bg-primary text-primary-fg',
+    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border-none bg-transparent px-3.5 py-1.5 text-[0.82rem] font-semibold text-muted hover:text-fg',
+  viewToggleBtnActive: 'bg-primary text-on-primary hover:bg-primary hover:text-on-primary',
 
   // ig
   igSectionTitle: 'inline-flex items-center gap-1.5',
@@ -160,7 +170,7 @@ export const ui = {
   adminNav: 'mt-4 flex flex-wrap gap-1 lg:flex-col',
   adminLink:
     'rounded-xl px-3 py-2 text-sm font-semibold text-fg hover:bg-primary-soft',
-  adminLinkActive: 'bg-primary text-primary-fg hover:bg-primary',
+  adminLinkActive: 'bg-primary text-on-primary hover:bg-primary',
   adminBack: 'mt-4 inline-flex text-sm font-semibold text-primary',
   adminMain: 'p-4 pb-12 lg:p-8 lg:pb-12',
   adminLoading: 'grid min-h-dvh place-items-center text-muted',

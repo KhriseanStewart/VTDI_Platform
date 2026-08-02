@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { mapPost, postToRow } from '../../lib/data'
 import { supabase } from '../../lib/supabase'
 import { useData } from '../../context/DataContext'
@@ -42,7 +42,26 @@ export default function AdminPosts() {
   }
 
   useEffect(() => {
-    load()
+    let cancelled = false
+    ;(async () => {
+      const [{ data: posts, error: pErr }, { data: comms, error: cErr }] = await Promise.all([
+        supabase.from('posts').select('*').order('posted_at', { ascending: false }),
+        supabase.from('post_comments').select('*').order('posted_at', { ascending: false }),
+      ])
+      if (cancelled) return
+      startTransition(() => {
+        if (pErr || cErr) setError(pErr?.message || cErr?.message)
+        else {
+          const byPost = {}
+          for (const c of comms || []) (byPost[c.post_id] ||= []).push(c)
+          setRows((posts || []).map((p) => mapPost(p, byPost[p.id] || [])))
+          setComments(comms || [])
+        }
+      })
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function setField(key, value) {

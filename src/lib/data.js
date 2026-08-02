@@ -47,6 +47,10 @@ export function mapEvent(row) {
     interested: row.interested ?? 0,
     price: row.price,
     attendees: row.attendees || [],
+    startsAt: row.starts_at || null,
+    endsAt: row.ends_at || null,
+    recurring: Boolean(row.recurring),
+    recurrenceNote: row.recurrence_note || '',
   }
 }
 
@@ -121,6 +125,10 @@ export function eventToRow(event) {
     interested: event.interested ?? 0,
     price: event.price,
     attendees: event.attendees || [],
+    starts_at: event.startsAt || null,
+    ends_at: event.endsAt || null,
+    recurring: Boolean(event.recurring),
+    recurrence_note: event.recurrenceNote || null,
     updated_at: new Date().toISOString(),
   }
 }

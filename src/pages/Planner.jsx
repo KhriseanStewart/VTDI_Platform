@@ -58,7 +58,7 @@ export default function Planner() {
                     key={p.id}
                     className="grid grid-cols-[auto_auto_auto_1fr_auto] items-center gap-[0.65rem] rounded-[0.9rem] border border-border bg-card p-[0.65rem]"
                   >
-                    <span className="grid h-[1.7rem] w-[1.7rem] place-items-center rounded-full bg-primary text-[0.8rem] font-bold text-primary-fg">
+                    <span className="grid h-[1.7rem] w-[1.7rem] place-items-center rounded-full bg-primary text-[0.8rem] font-bold text-on-primary">
                       {i + 1}
                     </span>
                     <GripVertical size={16} className={ui.muted} />

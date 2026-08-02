@@ -79,7 +79,7 @@ export default function VenueDetail() {
             ★
           </button>
           {place.special && (
-            <span className="absolute bottom-[0.85rem] left-[0.85rem] inline-flex items-center gap-[0.35rem] rounded-full bg-accent px-3 py-[0.45rem] text-[0.75rem] font-bold text-accent-fg">
+            <span className="absolute bottom-[0.85rem] left-[0.85rem] inline-flex items-center gap-[0.35rem] rounded-full bg-accent px-3 py-[0.45rem] text-[0.75rem] font-bold text-on-accent">
               <Sparkles size={14} />
               {place.special}
             </span>

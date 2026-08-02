@@ -26,13 +26,13 @@ export default function App() {
         <Route path="events/:id" element={<EventDetail />} />
         <Route path="profile" element={<Profile />} />
         <Route path="auth" element={<AuthPage />} />
-      </Route>
 
-      <Route path="admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="places" element={<AdminPlaces />} />
-        <Route path="events" element={<AdminEvents />} />
-        <Route path="posts" element={<AdminPosts />} />
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="places" element={<AdminPlaces />} />
+          <Route path="events" element={<AdminEvents />} />
+          <Route path="posts" element={<AdminPosts />} />
+        </Route>
       </Route>
     </Routes>
   )

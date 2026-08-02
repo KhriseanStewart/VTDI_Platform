@@ -7,10 +7,10 @@
   --color-muted: #6b756e;
   --color-border: #e8e4dc;
   --color-primary: #1f6b4f;
-  --color-primary-fg: #f7faf8;
+  --color-on-primary: #f7faf8;
   --color-primary-soft: rgb(31 107 79 / 0.12);
   --color-accent: #e4b84a;
-  --color-accent-fg: #3a2e0a;
+  --color-on-accent: #3a2e0a;
   --color-danger: #c23b3b;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", Georgia, serif;
@@ -49,6 +49,11 @@
   select,
   textarea {
     font: inherit;
+    color: inherit;
+  }
+
+  button {
+    background: none;
   }
 
   img {

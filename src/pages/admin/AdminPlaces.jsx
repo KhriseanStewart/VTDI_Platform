@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { CATEGORY_LABELS, PARISHES, PRICE_MIN, PRICE_MAX, normalizePriceRange } from '../../data/outyahData'
 import PlaceLocationPicker from '../../components/maps/PlaceLocationPicker'
 import { mapPlace, placeToRow } from '../../lib/data'
@@ -70,7 +70,18 @@ export default function AdminPlaces() {
   }
 
   useEffect(() => {
-    load()
+    let cancelled = false
+    ;(async () => {
+      const { data, error: err } = await supabase.from('places').select('*').order('name')
+      if (cancelled) return
+      startTransition(() => {
+        if (err) setError(err.message)
+        else setRows((data || []).map(mapPlace))
+      })
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function setField(key, value) {

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import { eventToRow, mapEvent } from '../../lib/data'
+import { eventStatus, eventStatusLabel } from '../../lib/events'
 import { supabase } from '../../lib/supabase'
 import { useData } from '../../context/DataContext'
 import { cn, ui } from '../../lib/ui'
@@ -19,6 +20,24 @@ const empty = {
   interested: 0,
   price: 'Free',
   attendees: [],
+  startsAt: '',
+  endsAt: '',
+  recurring: false,
+  recurrenceNote: '',
+}
+
+function toLocalInput(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function fromLocalInput(value) {
+  if (!value) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d.toISOString()
 }
 
 export default function AdminEvents() {
@@ -30,13 +49,30 @@ export default function AdminEvents() {
   const [busy, setBusy] = useState(false)
 
   async function load() {
-    const { data, error: err } = await supabase.from('events').select('*').order('title')
+    const { data, error: err } = await supabase.from('events').select('*').order('starts_at', {
+      ascending: true,
+      nullsFirst: false,
+    })
     if (err) setError(err.message)
     else setRows((data || []).map(mapEvent))
   }
 
   useEffect(() => {
-    load()
+    let cancelled = false
+    ;(async () => {
+      const { data, error: err } = await supabase.from('events').select('*').order('starts_at', {
+        ascending: true,
+        nullsFirst: false,
+      })
+      if (cancelled) return
+      startTransition(() => {
+        if (err) setError(err.message)
+        else setRows((data || []).map(mapEvent))
+      })
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function setField(key, value) {
@@ -47,7 +83,12 @@ export default function AdminEvents() {
     e.preventDefault()
     setBusy(true)
     setError('')
-    const { error: err } = await supabase.from('events').upsert(eventToRow(form))
+    const payload = {
+      ...form,
+      startsAt: fromLocalInput(form.startsAt),
+      endsAt: fromLocalInput(form.endsAt),
+    }
+    const { error: err } = await supabase.from('events').upsert(eventToRow(payload))
     setBusy(false)
     if (err) {
       setError(err.message)
@@ -118,6 +159,7 @@ export default function AdminEvents() {
                   placeId: e.target.value,
                   venueName: place?.name || f.venueName,
                   area: place?.area || f.area,
+                  image: f.image || place?.image || '',
                 }))
               }}
             >
@@ -135,6 +177,7 @@ export default function AdminEvents() {
               className={ui.fieldControl}
               value={form.date}
               onChange={(e) => setField('date', e.target.value)}
+              placeholder="Sat, Aug 2"
             />
           </label>
           <label className={ui.field}>
@@ -143,6 +186,25 @@ export default function AdminEvents() {
               className={ui.fieldControl}
               value={form.time}
               onChange={(e) => setField('time', e.target.value)}
+              placeholder="10:00 PM"
+            />
+          </label>
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Starts</span>
+            <input
+              className={ui.fieldControl}
+              type="datetime-local"
+              value={form.startsAt}
+              onChange={(e) => setField('startsAt', e.target.value)}
+            />
+          </label>
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Ends</span>
+            <input
+              className={ui.fieldControl}
+              type="datetime-local"
+              value={form.endsAt}
+              onChange={(e) => setField('endsAt', e.target.value)}
             />
           </label>
           <label className={ui.field}>
@@ -160,6 +222,24 @@ export default function AdminEvents() {
               value={form.image}
               onChange={(e) => setField('image', e.target.value)}
               required
+            />
+          </label>
+          <label className={cn(ui.field, 'flex-row items-center gap-2 pt-6')}>
+            <input
+              type="checkbox"
+              checked={form.recurring}
+              onChange={(e) => setField('recurring', e.target.checked)}
+            />
+            <span className={ui.fieldLabel}>Recurring event</span>
+          </label>
+          <label className={ui.field}>
+            <span className={ui.fieldLabel}>Recurrence note</span>
+            <input
+              className={ui.fieldControl}
+              value={form.recurrenceNote}
+              onChange={(e) => setField('recurrenceNote', e.target.value)}
+              placeholder="Annual every Independence Day"
+              disabled={!form.recurring}
             />
           </label>
         </div>
@@ -197,6 +277,7 @@ export default function AdminEvents() {
             <tr>
               <th className={ui.adminTh}>Title</th>
               <th className={ui.adminTh}>When</th>
+              <th className={ui.adminTh}>Status</th>
               <th className={ui.adminTh}>Venue</th>
               <th className={ui.adminTh} />
             </tr>
@@ -204,42 +285,54 @@ export default function AdminEvents() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td className={ui.adminTd} colSpan={4}>
+                <td className={ui.adminTd} colSpan={5}>
                   <div className={ui.adminEmptyInline}>No events yet — create one above.</div>
                 </td>
               </tr>
             ) : (
-              rows.map((ev) => (
-                <tr key={ev.id}>
-                  <td className={ui.adminTd}>
-                    <strong>{ev.title}</strong>
-                    <div className={ui.muted}>{ev.type}</div>
-                  </td>
-                  <td className={ui.adminTd}>
-                    {ev.date} · {ev.time}
-                  </td>
-                  <td className={ui.adminTd}>{ev.venueName}</td>
-                  <td className={cn(ui.adminTd, ui.adminRowActions)}>
-                    <button
-                      type="button"
-                      className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
-                      onClick={() => {
-                        setForm(ev)
-                        setEditing(true)
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
-                      onClick={() => onDelete(ev.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
+              rows.map((ev) => {
+                const status = eventStatus(ev)
+                return (
+                  <tr key={ev.id}>
+                    <td className={ui.adminTd}>
+                      <strong>{ev.title}</strong>
+                      <div className={ui.muted}>
+                        {ev.type}
+                        {ev.recurring ? ' · Recurring' : ''}
+                      </div>
+                    </td>
+                    <td className={ui.adminTd}>
+                      {ev.date} · {ev.time}
+                    </td>
+                    <td className={ui.adminTd}>{eventStatusLabel(status)}</td>
+                    <td className={ui.adminTd}>{ev.venueName}</td>
+                    <td className={cn(ui.adminTd, ui.adminRowActions)}>
+                      <button
+                        type="button"
+                        className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
+                        onClick={() => {
+                          setForm({
+                            ...ev,
+                            startsAt: toLocalInput(ev.startsAt),
+                            endsAt: toLocalInput(ev.endsAt),
+                            recurrenceNote: ev.recurrenceNote || '',
+                          })
+                          setEditing(true)
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
+                        onClick={() => onDelete(ev.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>

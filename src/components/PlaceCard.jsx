@@ -54,13 +54,15 @@ export default function PlaceCard({ place }) {
         >
           <Heart size={16} fill={fav ? 'currentColor' : 'none'} />
         </button>
-        <div className={ui.placeCardTags}>
-          {place.tags.slice(0, 2).map((tag) => (
-            <span key={tag} className={tagClass(tag)}>
-              {tag}
-            </span>
-          ))}
-        </div>
+        {(place.tags || []).length > 0 && (
+          <div className={ui.placeCardTags}>
+            {place.tags.slice(0, 2).map((tag) => (
+              <span key={tag} className={tagClass(tag)}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </Link>
 
       <Link to={`/place/${place.id}`} className={ui.placeCardBody}>
@@ -78,7 +80,7 @@ export default function PlaceCard({ place }) {
         <p className={ui.placeSubmeta}>
           <strong>{priceLabel(place.priceRange)}</strong>
           <span>·</span>
-          {place.reviewCount.toLocaleString()} reviews
+          {(place.reviewCount || 0).toLocaleString()} reviews
         </p>
       </Link>
     </article>

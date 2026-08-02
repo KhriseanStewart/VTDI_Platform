@@ -1,20 +1,26 @@
+import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CalendarDays, MapPin, Ticket, SearchX } from 'lucide-react'
+import { CalendarDays, MapPin, Ticket, SearchX, RefreshCw } from 'lucide-react'
 import EventCard from '../components/EventCard'
 import EmptyState from '../components/EmptyState'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
-import { btn, ui } from '../lib/ui'
+import { eventStatus, eventStatusLabel, sortEvents } from '../lib/events'
+import { btn, cn, ui } from '../lib/ui'
 
 export function Events() {
   const { events, loading, error, refresh } = useData()
   const { isAdmin } = useAuth()
+  const sorted = useMemo(() => sortEvents(events), [events])
 
   return (
     <div className={ui.stackLg}>
       <header>
         <p className={ui.eyebrow}>This week on the island</p>
         <h1 className={ui.display}>Events</h1>
+        <p className={cn(ui.muted, 'mt-1 text-sm')}>
+          Past nights stay listed so you can see what you missed — recurring events are marked.
+        </p>
       </header>
       {loading ? (
         <p className={ui.muted}>Loading events…</p>
@@ -30,7 +36,7 @@ export function Events() {
             </button>
           }
         />
-      ) : events.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
           eyebrow="Quiet week"
@@ -46,7 +52,7 @@ export function Events() {
         />
       ) : (
         <div className={ui.eventGrid}>
-          {events.map((e) => (
+          {sorted.map((e) => (
             <EventCard key={e.id} event={e} />
           ))}
         </div>
@@ -79,30 +85,64 @@ export function EventDetail() {
     )
   }
 
+  const status = eventStatus(event)
+  const statusLabel = eventStatusLabel(status)
+
   return (
     <div className={ui.stackLg}>
       <Link to="/events" className={ui.textLink}>
         ← All events
       </Link>
       <div className={ui.eventHero}>
-        <img src={event.image} alt={event.title} className="h-full w-full object-cover" />
-        <span className={ui.eventType}>{event.type}</span>
+        <img
+          src={event.image}
+          alt={event.title}
+          className={cn('h-full w-full object-cover', status === 'past' && 'grayscale')}
+        />
+        <div className={ui.eventBadgeRow}>
+          <span
+            className={cn(
+              ui.eventBadge,
+              status === 'past' && ui.eventBadgePast,
+              status === 'live' && ui.eventBadgeLive,
+              status === 'upcoming' && ui.eventBadgeUpcoming,
+            )}
+          >
+            {statusLabel}
+          </span>
+          {event.recurring && (
+            <span className={cn(ui.eventBadge, ui.eventBadgeRecurring)}>Recurring</span>
+          )}
+          <span className={cn(ui.eventBadge, 'bg-card/95 text-fg')}>{event.type}</span>
+        </div>
       </div>
       <header>
         <h1 className={ui.display}>{event.title}</h1>
         <p className="mt-2 flex flex-wrap items-center gap-[0.45rem] text-[0.9rem] text-muted">
-          <span>
+          <span className="inline-flex items-center gap-1">
             <CalendarDays size={14} /> {event.date} · {event.time}
           </span>
           <span>·</span>
-          <span>
+          <span className="inline-flex items-center gap-1">
             <MapPin size={14} /> {event.venueName}, {event.area}
           </span>
           <span>·</span>
-          <span>
+          <span className="inline-flex items-center gap-1">
             <Ticket size={14} /> {event.price}
           </span>
         </p>
+        {event.recurring && event.recurrenceNote && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
+            <RefreshCw size={14} />
+            {event.recurrenceNote}
+          </p>
+        )}
+        {status === 'past' && (
+          <p className="mt-2 text-sm font-semibold text-muted">
+            This event has ended
+            {event.recurring ? ' — it typically comes back on the next cycle.' : '.'}
+          </p>
+        )}
       </header>
       <p className={ui.lede}>{event.description}</p>
       <div className={ui.avatarStack}>
@@ -120,8 +160,12 @@ export function EventDetail() {
         </span>
       </div>
       <div className={ui.actionRow}>
-        <button type="button" className={btn(ui.btnPrimary)}>
-          RSVP going
+        <button
+          type="button"
+          className={btn(ui.btnPrimary)}
+          disabled={status === 'past'}
+        >
+          {status === 'past' ? 'Event ended' : 'RSVP going'}
         </button>
         {place && (
           <Link to={`/place/${place.id}`} className={btn(ui.btnOutline)}>

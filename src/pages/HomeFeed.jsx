@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
+import { sortEvents } from '../lib/events'
 import { Link } from 'react-router-dom'
 import {
   List,
   Map as MapIcon,
   Star,
   Camera,
-  CalendarDays,
   Compass,
   AlertTriangle,
 } from 'lucide-react'
@@ -13,6 +13,7 @@ import { CATEGORY_LABELS, priceLabel } from '../data/outyahData'
 import SearchBar from '../components/SearchBar'
 import CategoryChips from '../components/CategoryChips'
 import EventCard from '../components/EventCard'
+import PlaceCard from '../components/PlaceCard'
 import InstagramPostCard from '../components/InstagramPostCard'
 import EmptyState from '../components/EmptyState'
 import { PlacesMap } from '../components/maps/GoogleMaps'
@@ -32,6 +33,21 @@ export default function HomeFeed() {
 
   const greetingName =
     profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'friend'
+
+  const filteredPlaces = useMemo(() => {
+    let list = cat === 'all' ? places : places.filter((p) => p.category === cat)
+    if (q.trim()) {
+      const s = q.toLowerCase()
+      list = list.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(s) ||
+          p.area?.toLowerCase().includes(s) ||
+          p.neighborhood?.toLowerCase().includes(s) ||
+          (p.tags || []).some((t) => t.toLowerCase().includes(s)),
+      )
+    }
+    return list
+  }, [places, cat, q])
 
   const filteredPosts = useMemo(() => {
     let list = posts
@@ -57,27 +73,10 @@ export default function HomeFeed() {
     return list
   }, [posts, places, cat, q])
 
-  const mapPlaces = useMemo(() => {
-    const ids = new Set(filteredPosts.map((p) => p.placeId).filter(Boolean))
-    let list = places.filter((p) => ids.has(p.id))
-    if (!list.length) {
-      list = cat === 'all' ? places : places.filter((p) => p.category === cat)
-    }
-    if (q.trim()) {
-      const s = q.toLowerCase()
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(s) ||
-          p.area.toLowerCase().includes(s) ||
-          p.neighborhood.toLowerCase().includes(s),
-      )
-    }
-    return list
-  }, [filteredPosts, places, cat, q])
-
+  const mapPlaces = filteredPlaces
   const activeId = selected || mapPlaces[0]?.id
   const active = places.find((p) => p.id === activeId) || mapPlaces[0]
-  const heading = cat === 'all' ? 'Around Jamaica' : CATEGORY_LABELS[cat]
+  const heading = cat === 'all' ? 'Places to go' : CATEGORY_LABELS[cat]
 
   return (
     <div className={ui.stackLg}>
@@ -122,7 +121,7 @@ export default function HomeFeed() {
         />
       )}
 
-      {!error && view === 'feed' && (
+      {!error && view === 'feed' && events.length > 0 && (
         <section>
           <div className={ui.sectionHead}>
             <h2 className={ui.sectionHeadTitle}>Happening this week</h2>
@@ -130,29 +129,11 @@ export default function HomeFeed() {
               See all
             </Link>
           </div>
-          {loading ? (
-            <p className={ui.muted}>Loading events…</p>
-          ) : events.length === 0 ? (
-            <EmptyState
-              icon={CalendarDays}
-              eyebrow="Events"
-              title="No events on the calendar"
-              description="When admins publish nights out, live music, and premieres, they'll show up here."
-              action={
-                isAdmin ? (
-                  <Link to="/admin/events" className={btn(ui.btnPrimary)}>
-                    Add an event
-                  </Link>
-                ) : null
-              }
-            />
-          ) : (
-            <div className={ui.eventStrip}>
-              {events.map((e) => (
-                <EventCard key={e.id} event={e} compact />
-              ))}
-            </div>
-          )}
+          <div className={ui.eventStrip}>
+            {sortEvents(events).map((e) => (
+              <EventCard key={e.id} event={e} compact />
+            ))}
+          </div>
         </section>
       )}
 
@@ -163,56 +144,72 @@ export default function HomeFeed() {
       )}
 
       {!error && view === 'feed' ? (
-        <section className={ui.stack}>
-          <div className={ui.sectionHead}>
-            <h2 className={cn(ui.sectionHeadTitle, ui.igSectionTitle)}>
-              <Camera size={18} />
-              {heading}
-            </h2>
-            <span className={ui.mutedCount}>
-              {loading ? 'Loading…' : `${filteredPosts.length} posts`}
-            </span>
-          </div>
-
-          {loading ? (
-            <p className={ui.muted}>Loading feed…</p>
-          ) : filteredPosts.length === 0 ? (
-            <EmptyState
-              icon={Camera}
-              eyebrow="Feed"
-              title={posts.length === 0 ? 'The feed is waiting' : 'No matches'}
-              description={
-                posts.length === 0
-                  ? 'Be the first vibe on the island — publish a photo post from the admin portal.'
-                  : 'Nothing matches that search or category. Clear filters and try again.'
-              }
-              action={
-                posts.length === 0 && isAdmin ? (
-                  <Link to="/admin/posts" className={btn(ui.btnPrimary)}>
-                    Create a post
-                  </Link>
-                ) : posts.length > 0 ? (
-                  <button
-                    type="button"
-                    className={btn(ui.btnOutline)}
-                    onClick={() => {
-                      setCat('all')
-                      setQ('')
-                    }}
-                  >
-                    Clear filters
-                  </button>
-                ) : null
-              }
-            />
-          ) : (
-            <div className={ui.igFeed}>
-              {filteredPosts.map((post) => (
-                <InstagramPostCard key={post.id} post={post} />
-              ))}
+        <>
+          <section className={ui.stack}>
+            <div className={ui.sectionHead}>
+              <h2 className={ui.sectionHeadTitle}>{heading}</h2>
+              <span className={ui.mutedCount}>
+                {loading ? 'Loading…' : `${filteredPlaces.length} places`}
+              </span>
             </div>
+
+            {loading ? (
+              <p className={ui.muted}>Loading places…</p>
+            ) : filteredPlaces.length === 0 ? (
+              <EmptyState
+                icon={Compass}
+                eyebrow="Places"
+                title={places.length === 0 ? 'No places yet' : 'No matches'}
+                description={
+                  places.length === 0
+                    ? 'Add venues in admin and their cover photos will show up here.'
+                    : 'Nothing matches that search or category. Clear filters and try again.'
+                }
+                action={
+                  places.length === 0 && isAdmin ? (
+                    <Link to="/admin/places" className={btn(ui.btnPrimary)}>
+                      Add a place
+                    </Link>
+                  ) : places.length > 0 ? (
+                    <button
+                      type="button"
+                      className={btn(ui.btnOutline)}
+                      onClick={() => {
+                        setCat('all')
+                        setQ('')
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  ) : null
+                }
+              />
+            ) : (
+              <div className={ui.placeGrid}>
+                {filteredPlaces.map((p) => (
+                  <PlaceCard key={p.id} place={p} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {filteredPosts.length > 0 && (
+            <section className={ui.stack}>
+              <div className={ui.sectionHead}>
+                <h2 className={cn(ui.sectionHeadTitle, ui.igSectionTitle)}>
+                  <Camera size={18} />
+                  Around Jamaica
+                </h2>
+                <span className={ui.mutedCount}>{filteredPosts.length} posts</span>
+              </div>
+              <div className={ui.igFeed}>
+                {filteredPosts.map((post) => (
+                  <InstagramPostCard key={post.id} post={post} />
+                ))}
+              </div>
+            </section>
           )}
-        </section>
+        </>
       ) : !error ? (
         <section className={ui.stack}>
           {loading ? (
