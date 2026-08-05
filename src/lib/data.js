@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from './supabase'
+import { mapReview, reviewToRow } from './reviews'
 
 export function mapPlace(row) {
   if (!row) return null
@@ -211,4 +212,34 @@ export async function fetchPosts() {
 export async function fetchPostsForPlace(placeId) {
   const all = await fetchPosts()
   return all.filter((p) => p.placeId === placeId)
+}
+
+export async function fetchReviewsForPlace(placeId) {
+  ensureClient()
+  const { data, error } = await supabase
+    .from('place_reviews')
+    .select('*')
+    .eq('place_id', placeId)
+    .order('posted_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map(mapReview)
+}
+
+export async function createPlaceReview({ placeId, rating, text, author, avatar, userId }) {
+  ensureClient()
+  const id = `rev-${crypto.randomUUID().slice(0, 8)}`
+  const row = reviewToRow({
+    id,
+    placeId,
+    source: 'outyah',
+    author,
+    avatar,
+    rating,
+    text,
+    date: new Date().toISOString(),
+    userId,
+  })
+  const { data, error } = await supabase.from('place_reviews').insert(row).select('*').single()
+  if (error) throw error
+  return mapReview(data)
 }

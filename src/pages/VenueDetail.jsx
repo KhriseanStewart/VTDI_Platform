@@ -18,6 +18,7 @@ import { useApp } from '../context/AppContext'
 import { useData } from '../context/DataContext'
 import { PlaceMap } from '../components/maps/GoogleMaps'
 import EmptyState from '../components/EmptyState'
+import PlaceReviews from '../components/PlaceReviews'
 import { directionsUrl } from '../lib/maps'
 import { formatInstagramTime } from '../lib/instagram'
 import { btn, cn, ui } from '../lib/ui'
@@ -34,7 +35,6 @@ export default function VenueDetail() {
   const [slot, setSlot] = useState(null)
   const { isFavorite, toggleFavorite, isInPlan, togglePlan } = useApp()
 
-  const reviews = useMemo(() => place?.reviews ?? [], [place])
   const igPosts = useMemo(
     () => posts.filter((p) => p.placeId === place?.id),
     [posts, place],
@@ -107,16 +107,26 @@ export default function VenueDetail() {
       <header>
         <div className="flex flex-wrap gap-2">
           <span className={pill}>{CATEGORY_SINGULAR[place.category]}</span>
-          <span className={cn(pill, place.openNow && 'bg-primary-soft text-primary')}>
-            {place.openNow ? `Open until ${place.openUntil}` : 'Closed'}
-          </span>
+          {place.openNow != null && (
+            <span className={cn(pill, place.openNow && 'bg-primary-soft text-primary')}>
+              {place.openNow
+                ? place.openUntil
+                  ? `Open until ${place.openUntil}`
+                  : 'Open now'
+                : 'Closed'}
+            </span>
+          )}
         </div>
         <h1 className={ui.display}>{place.name}</h1>
         <p className="mt-2 flex flex-wrap items-center gap-[0.45rem] text-[0.9rem] text-muted">
-          <span className={ui.rating}>
-            <Star size={14} fill="currentColor" /> {place.rating}
-          </span>
-          <span>·</span>
+          {place.rating > 0 && (
+            <>
+              <span className={ui.rating}>
+                <Star size={14} fill="currentColor" /> {place.rating}
+              </span>
+              <span>·</span>
+            </>
+          )}
           <span>{priceLabel(place.priceRange)}</span>
           <span>·</span>
           <span>
@@ -188,7 +198,11 @@ export default function VenueDetail() {
             )}
             onClick={() => setTab(t)}
           >
-            {t === 'instagram' ? 'Instagram' : t[0].toUpperCase() + t.slice(1)}
+            {t === 'instagram'
+              ? 'Instagram'
+              : t === 'reviews'
+                ? `Reviews${place.reviewCount ? ` (${place.reviewCount})` : ''}`
+                : t[0].toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
@@ -197,16 +211,28 @@ export default function VenueDetail() {
         <div className={ui.stack}>
           <p className={ui.lede}>{place.description}</p>
           <div className="grid gap-[0.65rem]">
-            <div className="flex items-center gap-[0.55rem] text-muted">
-              <MapPin size={16} /> {place.address}
-            </div>
-            <div className="flex items-center gap-[0.55rem] text-muted">
-              <Phone size={16} /> {place.phone}
-            </div>
-            <div className="flex items-center gap-[0.55rem] text-muted">
-              <Clock size={16} /> {place.openNow ? `Open until ${place.openUntil}` : 'Closed now'}
-            </div>
+            {place.address && (
+              <div className="flex items-center gap-[0.55rem] text-muted">
+                <MapPin size={16} /> {place.address}
+              </div>
+            )}
+            {place.phone && (
+              <div className="flex items-center gap-[0.55rem] text-muted">
+                <Phone size={16} /> {place.phone}
+              </div>
+            )}
+            {place.openNow != null && (
+              <div className="flex items-center gap-[0.55rem] text-muted">
+                <Clock size={16} />{' '}
+                {place.openNow
+                  ? place.openUntil
+                    ? `Open until ${place.openUntil}`
+                    : 'Open now'
+                  : 'Closed now'}
+              </div>
+            )}
           </div>
+          {(place.amenities || []).length > 0 && (
           <div className="flex flex-wrap gap-2">
             {place.amenities.map((a) => (
               <span key={a} className={pill}>
@@ -214,6 +240,7 @@ export default function VenueDetail() {
               </span>
             ))}
           </div>
+          )}
           <div className={cn(ui.mapPanel, 'mt-1')}>
             <div className={cn(ui.mapCanvas, ui.mapCanvasSm)}>
               <PlaceMap place={place} />
@@ -223,29 +250,7 @@ export default function VenueDetail() {
       )}
 
       {tab === 'reviews' && (
-        <div className="grid gap-4">
-          {reviews.map((r) => (
-            <article key={r.id} className="flex gap-3 rounded-[0.9rem] border border-border bg-card p-4">
-              <img src={r.avatar} alt="" className={ui.avatar} />
-              <div>
-                <div className="flex flex-wrap items-center gap-[0.4rem]">
-                  <strong>{r.author}</strong>
-                  <span className={cn(pill, 'text-[0.68rem]')}>{r.source}</span>
-                  <span className={ui.muted}>{r.date}</span>
-                </div>
-                <div className={ui.rating}>
-                  <Star size={12} fill="currentColor" /> {r.rating}
-                </div>
-                <p>{r.text}</p>
-                {r.businessReply && (
-                  <blockquote className="mt-[0.65rem] rounded-r-[0.75rem] border-l-[3px] border-l-primary bg-primary-soft px-3 py-[0.65rem] text-[0.88rem] text-fg">
-                    Business reply: {r.businessReply}
-                  </blockquote>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+        <PlaceReviews placeId={place.id} placeRating={place.rating} />
       )}
 
       {tab === 'instagram' && (
@@ -270,19 +275,25 @@ export default function VenueDetail() {
                 <div className={ui.igCardMedia}>
                   <img src={post.mediaUrl} alt="" className="h-full w-full object-cover" />
                 </div>
-                <p className={ui.igLikes}>
-                  {post.likeCount.toLocaleString()} likes · {post.commentsCount} comments
-                </p>
                 <p className={ui.igCaption}>
                   <strong>@{post.username}</strong> {post.caption}
                 </p>
-                <ul className={ui.igComments}>
-                  {post.comments.map((c) => (
-                    <li key={c.id}>
-                      <strong>@{c.username}</strong> {c.text}
-                    </li>
-                  ))}
-                </ul>
+                {(post.likeCount > 0 || post.commentsCount > 0) && (
+                  <p className={ui.igLikes}>
+                    {post.likeCount > 0 && <>{post.likeCount.toLocaleString()} likes</>}
+                    {post.likeCount > 0 && post.commentsCount > 0 && ' · '}
+                    {post.commentsCount > 0 && <>{post.commentsCount} comments</>}
+                  </p>
+                )}
+                {(post.comments?.length ?? 0) > 0 && (
+                  <ul className={ui.igComments}>
+                    {post.comments.map((c) => (
+                      <li key={c.id}>
+                        <strong>@{c.username}</strong> {c.text}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </article>
             ))
           )}

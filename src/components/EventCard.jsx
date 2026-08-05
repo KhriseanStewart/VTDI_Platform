@@ -57,22 +57,17 @@ export default function EventCard({ event, compact = false }) {
           </p>
         )}
         <div className={ui.eventCardFoot}>
-          <div className={ui.avatarStack}>
-            {(event.attendees || []).slice(0, 3).map((a) => (
-              <img
-                key={a.name}
-                src={a.avatar}
-                alt=""
-                title={a.name}
-                className={ui.avatarStackImg}
-              />
-            ))}
-            <span>{event.going} going</span>
-          </div>
-          <span className={cn(ui.rsvp, status === 'past' && 'text-muted')}>
-            <CalendarDays size={13} />
-            {status === 'past' ? 'Ended' : 'RSVP'}
-          </span>
+          {status === 'past' ? (
+            <span className={cn(ui.rsvp, 'text-muted')}>
+              <CalendarDays size={13} />
+              Ended
+            </span>
+          ) : (
+            <span className={ui.rsvp}>
+              <CalendarDays size={13} />
+              View details
+            </span>
+          )}
         </div>
       </div>
     </Link>

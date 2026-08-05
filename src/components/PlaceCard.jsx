@@ -70,7 +70,7 @@ export default function PlaceCard({ place }) {
           <h3 className={ui.placeCardTitle}>{place.name}</h3>
           <span className={ui.rating}>
             <Star size={14} fill="currentColor" />
-            {place.rating}
+            {place.rating > 0 ? place.rating : '—'}
           </span>
         </div>
         <p className={ui.placeMeta}>
@@ -79,8 +79,12 @@ export default function PlaceCard({ place }) {
         </p>
         <p className={ui.placeSubmeta}>
           <strong>{priceLabel(place.priceRange)}</strong>
-          <span>·</span>
-          {(place.reviewCount || 0).toLocaleString()} reviews
+          {(place.reviewCount || 0) > 0 && (
+            <>
+              <span>·</span>
+              {(place.reviewCount || 0).toLocaleString()} reviews
+            </>
+          )}
         </p>
       </Link>
     </article>

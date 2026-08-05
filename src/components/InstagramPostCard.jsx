@@ -82,10 +82,23 @@ export default function InstagramPostCard({ post }) {
       </div>
 
       <div className={ui.igCardBody}>
-        <p className={ui.igLikes}>
-          {(post.likeCount ?? 0).toLocaleString()} likes ·{' '}
-          {(post.commentsCount ?? post.comments?.length ?? 0).toLocaleString()} comments
-        </p>
+        {((post.likeCount ?? 0) > 0 ||
+          (post.commentsCount ?? post.comments?.length ?? 0) > 0) && (
+          <p className={ui.igLikes}>
+            {(post.likeCount ?? 0) > 0 && (
+              <>{(post.likeCount ?? 0).toLocaleString()} likes</>
+            )}
+            {(post.likeCount ?? 0) > 0 &&
+              (post.commentsCount ?? post.comments?.length ?? 0) > 0 &&
+              ' · '}
+            {(post.commentsCount ?? post.comments?.length ?? 0) > 0 && (
+              <>
+                {(post.commentsCount ?? post.comments?.length ?? 0).toLocaleString()}{' '}
+                comments
+              </>
+            )}
+          </p>
+        )}
         {post.caption && (
           <p className={ui.igCaption}>
             <strong>@{post.username}</strong> {post.caption}

@@ -145,32 +145,19 @@ export function EventDetail() {
         )}
       </header>
       <p className={ui.lede}>{event.description}</p>
-      <div className={ui.avatarStack}>
-        {(event.attendees || []).map((a) => (
-          <img
-            key={a.name}
-            src={a.avatar}
-            alt={a.name}
-            title={a.name}
-            className={ui.avatarStackImgLarge}
-          />
-        ))}
-        <span>
-          {event.going} going · {event.interested} interested
-        </span>
-      </div>
       <div className={ui.actionRow}>
-        <button
-          type="button"
-          className={btn(ui.btnPrimary)}
-          disabled={status === 'past'}
-        >
-          {status === 'past' ? 'Event ended' : 'RSVP going'}
-        </button>
+        {status === 'past' ? (
+          <button type="button" className={btn(ui.btnPrimary)} disabled>
+            Event ended
+          </button>
+        ) : null}
         {place && (
           <Link to={`/place/${place.id}`} className={btn(ui.btnOutline)}>
             View venue
           </Link>
+        )}
+        {event.placeId == null && status !== 'past' && (
+          <span className={ui.muted}>Check the venue for tickets and times.</span>
         )}
       </div>
     </div>
