@@ -1,11 +1,10 @@
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import {
-  Home,
+  Compass,
   Route,
   Ticket,
   User,
   Heart,
-  CalendarHeart,
   LayoutDashboard,
   MapPin,
   Calendar,
@@ -13,10 +12,11 @@ import {
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
+import Logo from '../Logo'
 import { cn, ui } from '../../lib/ui'
 
 const NAV = [
-  { to: '/', label: 'Feed', icon: Home, end: true },
+  { to: '/explore', label: 'Explore', icon: Compass, end: true },
   { to: '/plan', label: 'Plan', icon: Route },
   { to: '/events', label: 'Events', icon: Ticket },
   { to: '/profile', label: 'Profile', icon: User },
@@ -28,19 +28,6 @@ const ADMIN_NAV = [
   { to: '/admin/events', label: 'Events', icon: Calendar },
   { to: '/admin/posts', label: 'Posts', icon: Camera },
 ]
-
-function Logo() {
-  return (
-    <Link to="/" className={ui.logo}>
-      <span className={ui.logoMark}>
-        <CalendarHeart size={20} />
-      </span>
-      <span className={ui.logoText}>
-        Out<span className="text-primary">Yah</span>
-      </span>
-    </Link>
-  )
-}
 
 export default function Layout() {
   const { plan, favorites } = useApp()

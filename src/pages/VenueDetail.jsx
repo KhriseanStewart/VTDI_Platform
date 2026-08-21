@@ -19,6 +19,7 @@ import { useData } from '../context/DataContext'
 import { PlaceMap } from '../components/maps/GoogleMaps'
 import EmptyState from '../components/EmptyState'
 import PlaceReviews from '../components/PlaceReviews'
+import VenuePhotoSubmit from '../components/VenuePhotoSubmit'
 import { directionsUrl } from '../lib/maps'
 import { formatInstagramTime } from '../lib/instagram'
 import { btn, cn, ui } from '../lib/ui'
@@ -51,8 +52,8 @@ export default function VenueDetail() {
         title="Place not found"
         description="This venue isn't in Supabase — it may have been removed."
         action={
-          <Link to="/" className={btn(ui.btnPrimary)}>
-            Back to feed
+          <Link to="/explore" className={btn(ui.btnPrimary)}>
+            Back to explore
           </Link>
         }
       />
@@ -64,8 +65,8 @@ export default function VenueDetail() {
 
   return (
     <div className={ui.stackLg}>
-      <Link to="/" className={ui.textLink}>
-        ← Back to feed
+      <Link to="/explore" className={ui.textLink}>
+        ← Back to explore
       </Link>
 
       <div>
@@ -164,6 +165,10 @@ export default function VenueDetail() {
           <h2 className="mb-[0.85rem] text-[1.05rem] font-bold">
             {place.slotLabel ?? 'Book a time'}
           </h2>
+          <p className={cn(ui.muted, 'mb-3 text-sm')}>
+            Pick a preferred window, then call the venue to confirm. OutYah does not take
+            payments.
+          </p>
           <div className="flex flex-wrap gap-2">
             {place.slots.map((s) => {
               const key = s.time + (s.label ?? '')
@@ -184,8 +189,27 @@ export default function VenueDetail() {
               )
             })}
           </div>
+          {slot && place.phone && (
+            <a href={`tel:${place.phone.replace(/\s/g, '')}`} className={cn(btn(ui.btnPrimary), 'mt-3')}>
+              <Phone size={16} /> Call to book · {place.phone}
+            </a>
+          )}
         </section>
       )}
+
+      {!place.slots?.length && place.phone && (
+        <section className={ui.cardPanel}>
+          <h2 className="mb-[0.55rem] text-[1.05rem] font-bold">Booking & contact</h2>
+          <p className={cn(ui.muted, 'mb-3 text-sm')}>
+            Contact the venue directly to reserve a table or ask about tickets.
+          </p>
+          <a href={`tel:${place.phone.replace(/\s/g, '')}`} className={btn(ui.btnPrimary)}>
+            <Phone size={16} /> {place.phone}
+          </a>
+        </section>
+      )}
+
+      <VenuePhotoSubmit placeId={place.id} placeName={place.name} />
 
       <div className="flex gap-[0.35rem] border-b border-border">
         {['overview', 'reviews', 'instagram', 'hours'].map((t) => (

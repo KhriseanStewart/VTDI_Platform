@@ -29,6 +29,51 @@
   }
 }
 
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+@layer utilities {
+  .motion-fade-up {
+    animation: fade-up 0.85s ease-out both;
+  }
+  .motion-delay-1 {
+    animation-delay: 0.1s;
+  }
+  .motion-delay-2 {
+    animation-delay: 0.2s;
+  }
+  .motion-delay-3 {
+    animation-delay: 0.3s;
+  }
+  .motion-kenburns {
+    animation: hero-kenburns 28s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .motion-fade-up,
+    .motion-kenburns {
+      animation: none;
+    }
+  }
+}
+
 @layer base {
   html,
   body,

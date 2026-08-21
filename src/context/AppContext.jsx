@@ -128,6 +128,40 @@ export function AppProvider({ children }) {
         setPlan([])
         syncPlan([])
       },
+      /** Replace entire plan with an ordered list of place ids */
+      replacePlan: (ids) => {
+        const next = [...new Set((ids || []).filter(Boolean))]
+        setPlan(next)
+        syncPlan(next)
+      },
+      /** Append missing stops, preserving current order then new ones */
+      mergePlan: (ids) => {
+        setPlan((prev) => {
+          const next = [...prev]
+          for (const id of ids || []) {
+            if (id && !next.includes(id)) next.push(id)
+          }
+          syncPlan(next)
+          return next
+        })
+      },
+      movePlanStop: (id, direction) => {
+        setPlan((prev) => {
+          const i = prev.indexOf(id)
+          if (i < 0) return prev
+          const j = direction === 'up' ? i - 1 : i + 1
+          if (j < 0 || j >= prev.length) return prev
+          const next = [...prev]
+          ;[next[i], next[j]] = [next[j], next[i]]
+          syncPlan(next)
+          return next
+        })
+      },
+      reorderPlan: (orderedIds) => {
+        const next = [...new Set((orderedIds || []).filter(Boolean))]
+        setPlan(next)
+        syncPlan(next)
+      },
     }
   }, [favorites, plan, ready, user])
 

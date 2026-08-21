@@ -16,8 +16,8 @@ export default function AdminLayout() {
           Your account is signed in but not an admin. In Supabase SQL Editor run:
         </p>
         <pre className={ui.codeBlock}>{`update profiles set role = 'admin' where id = '${user.id}';`}</pre>
-        <Link to="/" className={cn(ui.btn, ui.btnOutline)}>
-          Back to Feed
+        <Link to="/explore" className={cn(ui.btn, ui.btnOutline)}>
+          Back to Explore
         </Link>
       </div>
     )

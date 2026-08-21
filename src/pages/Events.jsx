@@ -16,10 +16,10 @@ export function Events() {
   return (
     <div className={ui.stackLg}>
       <header>
-        <p className={ui.eyebrow}>This week on the island</p>
+        <p className={ui.eyebrow}>Next 6 months on the island</p>
         <h1 className={ui.display}>Events</h1>
         <p className={cn(ui.muted, 'mt-1 text-sm')}>
-          Past nights stay listed so you can see what you missed — recurring events are marked.
+          Festivals, beach parties, and recurring nights across Jamaica — past events stay listed too.
         </p>
       </header>
       {loading ? (

@@ -1,3 +1,6 @@
+-- LEGACY mock seed (see docs/database/CATALOG.md for live data scripts)
+-- Updated: 19 August 2026
+
 -- Seed data generated from src/data
 
 truncate post_comments, posts, events, plan_stops, favorites, places restart identity cascade;

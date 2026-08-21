@@ -40,7 +40,7 @@ export default function Favorites() {
           title="Your list is empty"
           description="Tap the heart on any place in the feed or map — your shortlist will live here."
           action={
-            <Link to="/" className={btn(ui.btnPrimary)}>
+            <Link to="/explore" className={btn(ui.btnPrimary)}>
               Discover places
             </Link>
           }

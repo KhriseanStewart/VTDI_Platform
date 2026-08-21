@@ -1,3 +1,14 @@
+-- LEGACY mock seed data (course submission reference only)
+-- Updated: 19 August 2026
+--
+-- The LIVE production app uses bun seed scripts instead of this file:
+--   bun scripts/seed_jamaica_catalog.mjs
+--   bun scripts/seed_jamaica_island_photos.mjs
+--   bun scripts/seed_real_place_reviews.mjs
+--
+-- See docs/database/CATALOG.md for current live totals (49 places, 53 events).
+-- Prefer applying schema via 001_init.sql + 002 + 003, or full_setup.sql.
+
 -- Seed data generated from src/data
 
 truncate post_comments, posts, events, plan_stops, favorites, places restart identity cascade;

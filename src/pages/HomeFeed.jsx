@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
-import { sortEvents } from '../lib/events'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { sortEvents, eventStatus } from '../lib/events'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   List,
   Map as MapIcon,
@@ -8,9 +8,13 @@ import {
   Camera,
   Compass,
   AlertTriangle,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
-import { CATEGORY_LABELS, priceLabel } from '../data/outyahData'
-import SearchBar from '../components/SearchBar'
+import { AREAS, CATEGORY_LABELS, priceLabel } from '../data/outyahData'
 import CategoryChips from '../components/CategoryChips'
 import EventCard from '../components/EventCard'
 import PlaceCard from '../components/PlaceCard'
@@ -25,7 +29,9 @@ import { cn, ui, btn } from '../lib/ui'
 export default function HomeFeed() {
   const [view, setView] = useState('feed')
   const [cat, setCat] = useState('all')
+  const [area, setArea] = useState('all')
   const [q, setQ] = useState('')
+  const [searchParams] = useSearchParams()
   const { places, events, posts, loading, error, refresh } = useData()
   const [selected, setSelected] = useState(null)
   const { isFavorite, toggleFavorite } = useApp()
@@ -34,8 +40,16 @@ export default function HomeFeed() {
   const greetingName =
     profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'friend'
 
+  useEffect(() => {
+    const fromUrl = searchParams.get('q')
+    if (fromUrl) setQ(fromUrl)
+  }, [searchParams])
+
   const filteredPlaces = useMemo(() => {
     let list = cat === 'all' ? places : places.filter((p) => p.category === cat)
+    if (area !== 'all') {
+      list = list.filter((p) => p.area === area)
+    }
     if (q.trim()) {
       const s = q.toLowerCase()
       list = list.filter(
@@ -47,7 +61,7 @@ export default function HomeFeed() {
       )
     }
     return list
-  }, [places, cat, q])
+  }, [places, cat, area, q])
 
   const filteredPosts = useMemo(() => {
     let list = posts
@@ -73,18 +87,37 @@ export default function HomeFeed() {
     return list
   }, [posts, places, cat, q])
 
+  const popularTrips = useMemo(() => {
+    return sortEvents(events)
+      .filter((e) => eventStatus(e) !== 'past')
+      .slice(0, 6)
+  }, [events])
+
+  const parishOptions = useMemo(() => {
+    const present = new Set(places.map((p) => p.area).filter(Boolean))
+    return AREAS.filter((a) => present.has(a))
+  }, [places])
+
   const mapPlaces = filteredPlaces
   const activeId = selected || mapPlaces[0]?.id
   const active = places.find((p) => p.id === activeId) || mapPlaces[0]
-  const heading = cat === 'all' ? 'Places to go' : CATEGORY_LABELS[cat]
+  const heading = cat === 'all' ? 'Results' : CATEGORY_LABELS[cat]
+
+  const scrollStrip = (id, dir) => {
+    document.getElementById(id)?.scrollBy({ left: dir * 280, behavior: 'smooth' })
+  }
 
   return (
     <div className={ui.stackLg}>
       <header>
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className={ui.eyebrow}>Wah gwaan, {greetingName}</p>
-            <h1 className={ui.display}>Find your next outing</h1>
+            <h1 className={ui.display}>Find a trip</h1>
+            <p className={cn(ui.muted, 'mt-1 max-w-md text-sm')}>
+              Search the island by place, parish, or vibe — then open the map when you&apos;re ready
+              to move.
+            </p>
           </div>
           <div className={ui.viewToggle} role="group" aria-label="Feed or map view">
             <button
@@ -103,7 +136,50 @@ export default function HomeFeed() {
             </button>
           </div>
         </div>
-        <SearchBar value={q} onChange={setQ} />
+
+        <div className={ui.discoverPanel}>
+          <div className={ui.discoverRow}>
+            <label className={ui.discoverField}>
+              <span className={ui.discoverFieldLabel}>Where to go</span>
+              <span className="flex items-center gap-2">
+                <MapPin size={16} className="shrink-0 text-primary" />
+                <select
+                  className={ui.discoverFieldControl}
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                  aria-label="Parish"
+                >
+                  <option value="all">All of Jamaica</option>
+                  {parishOptions.map((a) => (
+                    <option key={a} value={a}>
+                      {a}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
+
+            <label className={ui.discoverField}>
+              <span className={ui.discoverFieldLabel}>Looking for</span>
+              <input
+                className={ui.discoverFieldControl}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Beach, jerk, waterfall…"
+                aria-label="Search places"
+              />
+            </label>
+
+            <button
+              type="button"
+              className={ui.discoverSearchBtn}
+              onClick={() => setView('feed')}
+            >
+              <Search size={16} />
+              Search
+            </button>
+          </div>
+        </div>
       </header>
 
       {error && (
@@ -121,18 +197,46 @@ export default function HomeFeed() {
         />
       )}
 
-      {!error && view === 'feed' && events.length > 0 && (
+      {!error && view === 'feed' && popularTrips.length > 0 && (
         <section>
           <div className={ui.sectionHead}>
-            <h2 className={ui.sectionHeadTitle}>Happening this week</h2>
-            <Link to="/events" className={ui.textLink}>
-              See all
-            </Link>
+            <h2 className={ui.sectionHeadTitle}>Popular trips</h2>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Scroll popular left"
+                className={cn(ui.btn, ui.btnOutline, ui.btnSm, 'rounded-full px-2')}
+                onClick={() => scrollStrip('popular-strip', -1)}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label="Scroll popular right"
+                className={cn(ui.btn, ui.btnOutline, ui.btnSm, 'rounded-full px-2')}
+                onClick={() => scrollStrip('popular-strip', 1)}
+              >
+                <ChevronRight size={16} />
+              </button>
+              <Link to="/events" className={ui.textLink}>
+                See all
+              </Link>
+            </div>
           </div>
-          <div className={ui.eventStrip}>
-            {sortEvents(events).map((e) => (
-              <EventCard key={e.id} event={e} compact />
-            ))}
+          <div id="popular-strip" className={ui.popularStrip}>
+            <div className={ui.popularMosaic}>
+              {popularTrips.map((e) => (
+                <Link key={e.id} to={`/events/${e.id}`} className={ui.popularCard}>
+                  <img src={e.image} alt="" className={ui.popularCardImg} />
+                  <span className="min-w-0">
+                    <strong className="block truncate text-[0.9rem]">{e.title}</strong>
+                    <span className="mt-0.5 block text-[0.75rem] text-muted">
+                      {e.date} · {e.area}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -148,7 +252,8 @@ export default function HomeFeed() {
           <section className={ui.stack}>
             <div className={ui.sectionHead}>
               <h2 className={ui.sectionHeadTitle}>{heading}</h2>
-              <span className={ui.mutedCount}>
+              <span className={cn(ui.mutedCount, 'inline-flex items-center gap-1.5')}>
+                <SlidersHorizontal size={14} />
                 {loading ? 'Loading…' : `${filteredPlaces.length} places`}
               </span>
             </div>
@@ -163,7 +268,7 @@ export default function HomeFeed() {
                 description={
                   places.length === 0
                     ? 'Add venues in admin and their cover photos will show up here.'
-                    : 'Nothing matches that search or category. Clear filters and try again.'
+                    : 'Nothing matches that search or filter. Clear filters and try again.'
                 }
                 action={
                   places.length === 0 && isAdmin ? (
@@ -176,6 +281,7 @@ export default function HomeFeed() {
                       className={btn(ui.btnOutline)}
                       onClick={() => {
                         setCat('all')
+                        setArea('all')
                         setQ('')
                       }}
                     >
@@ -293,6 +399,24 @@ export default function HomeFeed() {
           )}
         </section>
       ) : null}
+
+      {!error && view === 'feed' && events.length > 0 && popularTrips.length === 0 && (
+        <section>
+          <div className={ui.sectionHead}>
+            <h2 className={ui.sectionHeadTitle}>Coming up on the island</h2>
+            <Link to="/events" className={ui.textLink}>
+              See all
+            </Link>
+          </div>
+          <div className={ui.eventStrip}>
+            {sortEvents(events)
+              .slice(0, 8)
+              .map((e) => (
+                <EventCard key={e.id} event={e} compact />
+              ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

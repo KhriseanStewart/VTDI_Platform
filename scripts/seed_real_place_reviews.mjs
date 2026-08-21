@@ -10,21 +10,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import postgres from 'postgres'
 
-function loadEnv() {
-  const raw = readFileSync(resolve(process.cwd(), '.env'), 'utf8')
-  for (const line of raw.split('\n')) {
-    const m = line.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (!m) continue
-    let val = m[2]
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1)
-    }
-    if (!process.env[m[1]]) process.env[m[1]] = val
-  }
-}
+import { inJamaica, JAMAICA_CENTER, loadEnv } from './lib/seed-env.mjs'
 
 loadEnv()
 
@@ -47,10 +33,36 @@ const VENUES = [
   { id: 'deaf-can-coffee', query: 'Deaf Can Coffee Kingston Jamaica Barbados Avenue' },
   { id: 'palace-cineplex', query: 'Palace Cineplex Sovereign Centre Kingston' },
   { id: 'starbucks-hwt', query: 'Starbucks Half Way Tree Kingston Jamaica' },
+  { id: 'ricks-cafe', query: "Rick's Cafe Negril Jamaica" },
+  { id: 'dunn-river-falls', query: "Dunn's River Falls Ocho Rios Jamaica" },
+  { id: 'doctors-cave-beach', query: "Doctor's Cave Beach Montego Bay" },
+  { id: 'rose-hall', query: 'Rose Hall Great House Montego Bay' },
+  { id: 'mystic-mountain', query: 'Mystic Mountain Ocho Rios Jamaica' },
+  { id: 'frenchmans-cove', query: "Frenchman's Cove Beach Port Antonio" },
+  { id: 'ys-falls', query: 'YS Falls St Elizabeth Jamaica' },
+  { id: 'floyds-pelican-bar', query: "Floyd's Pelican Bar Jamaica" },
+  { id: 'appleton-estate', query: 'Appleton Estate Rum Tour Jamaica' },
+  { id: 'emancipation-park', query: 'Emancipation Park Kingston Jamaica' },
+  { id: 'scotchies-mobay', query: 'Scotchies Jerk Centre Montego Bay' },
+  { id: 'margaritaville-mobay', query: 'Margaritaville Montego Bay Jamaica' },
+  { id: 'luminous-lagoon', query: 'Luminous Lagoon Falmouth Jamaica' },
+  { id: 'boston-jerk', query: 'Boston Jerk Centre Portland Jamaica' },
 ]
 
-function inKingstonMetro(lat, lng) {
-  return lat > 17.85 && lat < 18.15 && lng > -76.95 && lng < -76.7
+async function textSearch(query) {
+  const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json')
+  url.searchParams.set('query', query)
+  url.searchParams.set('location', `${JAMAICA_CENTER.lat},${JAMAICA_CENTER.lng}`)
+  url.searchParams.set('radius', '200000')
+  url.searchParams.set('key', mapsKey)
+  const json = await fetch(url).then((r) => r.json())
+  if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
+    throw new Error(`TextSearch ${json.status}: ${query}`)
+  }
+  const hit = (json.results || []).find((r) =>
+    inJamaica(r.geometry.location.lat, r.geometry.location.lng),
+  )
+  return hit?.place_id || null
 }
 
 function reviewId(placeId, author, text) {
@@ -58,22 +70,6 @@ function reviewId(placeId, author, text) {
     .update(`${placeId}|google|${author}|${text.slice(0, 120)}`)
     .digest('hex')
   return `rev-${h.slice(0, 12)}`
-}
-
-async function textSearch(query) {
-  const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json')
-  url.searchParams.set('query', query)
-  url.searchParams.set('location', '18.0179,-76.8099')
-  url.searchParams.set('radius', '25000')
-  url.searchParams.set('key', mapsKey)
-  const json = await fetch(url).then((r) => r.json())
-  if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
-    throw new Error(`TextSearch ${json.status}: ${query}`)
-  }
-  const hit = (json.results || []).find((r) =>
-    inKingstonMetro(r.geometry.location.lat, r.geometry.location.lng),
-  )
-  return hit?.place_id || null
 }
 
 async function placeDetails(placeId, sort) {

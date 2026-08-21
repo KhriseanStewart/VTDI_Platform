@@ -69,6 +69,8 @@ export function mapPost(row, comments = []) {
     timestamp: row.posted_at,
     likeCount: row.like_count ?? 0,
     commentsCount: row.comments_count ?? comments.length,
+    status: row.status || 'approved',
+    submittedBy: row.submitted_by || null,
     comments: comments.map((c) => ({
       id: c.id,
       username: c.username,
@@ -147,6 +149,8 @@ export function postToRow(post) {
     posted_at: post.timestamp || new Date().toISOString(),
     like_count: post.likeCount ?? 0,
     comments_count: post.commentsCount ?? 0,
+    status: post.status || 'approved',
+    submitted_by: post.submittedBy || null,
     updated_at: new Date().toISOString(),
   }
 }
@@ -173,7 +177,7 @@ export async function fetchPlace(id) {
 
 export async function fetchEvents() {
   ensureClient()
-  const { data, error } = await supabase.from('events').select('*').order('title')
+  const { data, error } = await supabase.from('events').select('*').order('starts_at', { ascending: true, nullsFirst: false })
   if (error) throw error
   return (data || []).map(mapEvent)
 }
@@ -187,13 +191,20 @@ export async function fetchEvent(id) {
 
 export async function fetchPosts() {
   ensureClient()
-  const { data, error } = await supabase
-    .from('posts')
-    .select('*')
-    .order('posted_at', { ascending: false })
+  let query = supabase.from('posts').select('*').order('posted_at', { ascending: false })
+  // Prefer approved-only when the moderation column exists; ignore filter errors on older DBs
+  const { data, error } = await query.eq('status', 'approved')
+  if (error && /status/i.test(error.message)) {
+    const retry = await supabase.from('posts').select('*').order('posted_at', { ascending: false })
+    if (retry.error) throw retry.error
+    return hydratePosts(retry.data)
+  }
   if (error) throw error
-  if (!data?.length) return []
+  return hydratePosts(data)
+}
 
+async function hydratePosts(data) {
+  if (!data?.length) return []
   const ids = data.map((p) => p.id)
   const { data: comments, error: cErr } = await supabase
     .from('post_comments')
@@ -201,7 +212,6 @@ export async function fetchPosts() {
     .in('post_id', ids)
     .order('posted_at', { ascending: true })
   if (cErr) throw cErr
-
   const byPost = {}
   for (const c of comments || []) {
     ;(byPost[c.post_id] ||= []).push(c)
@@ -212,6 +222,49 @@ export async function fetchPosts() {
 export async function fetchPostsForPlace(placeId) {
   const all = await fetchPosts()
   return all.filter((p) => p.placeId === placeId)
+}
+
+/** Signed-in user submits a venue photo for admin approval. */
+export async function submitVenuePhoto({
+  placeId,
+  mediaUrl,
+  caption,
+  userId,
+  username,
+  userAvatar,
+}) {
+  ensureClient()
+  if (!userId) throw new Error('Sign in to submit a photo')
+  if (!placeId || !mediaUrl) throw new Error('Photo and venue are required')
+  const id = `sub-${crypto.randomUUID().slice(0, 10)}`
+  const row = {
+    id,
+    place_id: placeId,
+    username: username || 'OutYah user',
+    user_avatar: userAvatar || null,
+    caption: caption || null,
+    media_url: mediaUrl,
+    media_type: 'IMAGE',
+    permalink: null,
+    posted_at: new Date().toISOString(),
+    like_count: 0,
+    comments_count: 0,
+    status: 'pending',
+    submitted_by: userId,
+    updated_at: new Date().toISOString(),
+  }
+  const { data, error } = await supabase.from('posts').insert(row).select('*').single()
+  if (error) throw error
+  return mapPost(data)
+}
+
+export async function setPostStatus(id, status) {
+  ensureClient()
+  const { error } = await supabase
+    .from('posts')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function fetchReviewsForPlace(placeId) {

@@ -1,5 +1,10 @@
--- OutYah initial schema + RLS
--- Run in Supabase SQL Editor, then run supabase/seed.sql
+-- OutYah full schema + legacy sample seed + migrations 002/003
+-- Updated: 19 August 2026
+-- Run in Supabase SQL Editor (course submission copy)
+--
+-- For LIVE production data, use bun seed scripts after schema apply:
+--   bun scripts/seed_jamaica_catalog.mjs
+-- See docs/database/CATALOG.md for current totals (49 places, 53 events).
 
 create extension if not exists "pgcrypto";
 
@@ -562,3 +567,165 @@ insert into posts (
 insert into post_comments (id, post_id, username, body, posted_at) values (
   'ig-sevenmile-1-c1', 'ig-sevenmile-1', 'travel.twin', 'This photo sold me on Negril.', '2026-07-11T18:02:00Z'
 );
+
+
+-- ===== Migration 002: events schedule =====
+-- Event scheduling + recurrence metadata
+alter table public.events
+  add column if not exists starts_at timestamptz,
+  add column if not exists ends_at timestamptz,
+  add column if not exists recurring boolean not null default false,
+  add column if not exists recurrence_note text;
+
+create index if not exists events_starts_at_idx on public.events (starts_at desc nulls last);
+
+
+-- ===== Migration 003: place reviews =====
+-- Place reviews with cross-platform sources
+create table if not exists public.place_reviews (
+  id text primary key,
+  place_id text not null references public.places (id) on delete cascade,
+  source text not null check (source in ('outyah', 'google', 'instagram', 'tripadvisor', 'yelp')),
+  author text not null,
+  avatar text,
+  rating numeric(2,1) not null check (rating >= 1 and rating <= 5),
+  body text not null,
+  business_reply text,
+  posted_at timestamptz not null default now(),
+  user_id uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists place_reviews_place_id_idx on public.place_reviews (place_id, posted_at desc);
+create index if not exists place_reviews_source_idx on public.place_reviews (source);
+
+alter table public.place_reviews enable row level security;
+
+drop policy if exists "Reviews public read" on public.place_reviews;
+create policy "Reviews public read"
+  on public.place_reviews for select using (true);
+
+drop policy if exists "Reviews user insert" on public.place_reviews;
+create policy "Reviews user insert"
+  on public.place_reviews for insert
+  with check (
+    auth.uid() is not null
+    and source = 'outyah'
+    and user_id = auth.uid()
+  );
+
+drop policy if exists "Reviews admin write" on public.place_reviews;
+create policy "Reviews admin write"
+  on public.place_reviews for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "Reviews owner delete" on public.place_reviews;
+create policy "Reviews owner delete"
+  on public.place_reviews for delete
+  using (auth.uid() is not null and user_id = auth.uid());
+
+-- Keep places.review_count in sync; rating stays the Google (or admin) aggregate
+create or replace function public.refresh_place_review_stats()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_id text;
+begin
+  target_id := coalesce(new.place_id, old.place_id);
+  update public.places p
+  set
+    review_count = (
+      select count(*)::int from public.place_reviews r where r.place_id = target_id
+    ),
+    updated_at = now()
+  where p.id = target_id;
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists place_reviews_stats_aiud on public.place_reviews;
+create trigger place_reviews_stats_aiud
+  after insert or update or delete on public.place_reviews
+  for each row execute function public.refresh_place_review_stats();
+-- Shared outing plans (public share links)
+create table if not exists public.shared_plans (
+  id text primary key,
+  title text,
+  place_ids jsonb not null default '[]'::jsonb,
+  created_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists shared_plans_created_at_idx
+  on public.shared_plans (created_at desc);
+
+alter table public.shared_plans enable row level security;
+
+drop policy if exists "Shared plans public read" on public.shared_plans;
+create policy "Shared plans public read"
+  on public.shared_plans for select using (true);
+
+-- Anyone can create a share link (guests + signed-in users)
+drop policy if exists "Shared plans public insert" on public.shared_plans;
+create policy "Shared plans public insert"
+  on public.shared_plans for insert
+  with check (
+    jsonb_typeof(place_ids) = 'array'
+    and jsonb_array_length(place_ids) > 0
+    and jsonb_array_length(place_ids) <= 30
+  );
+
+drop policy if exists "Shared plans owner delete" on public.shared_plans;
+create policy "Shared plans owner delete"
+  on public.shared_plans for delete
+  using (auth.uid() is not null and created_by = auth.uid());
+
+
+-- ===== Migration 005: post moderation =====
+-- Post moderation status + authenticated submissions
+alter table public.posts
+  add column if not exists status text not null default 'approved'
+    check (status in ('pending', 'approved', 'rejected')),
+  add column if not exists submitted_by uuid references auth.users (id) on delete set null;
+
+create index if not exists posts_status_idx on public.posts (status, posted_at desc);
+
+-- Public only sees approved posts
+drop policy if exists "Posts public read" on public.posts;
+create policy "Posts public read"
+  on public.posts for select
+  using (
+    status = 'approved'
+    or public.is_admin()
+    or (auth.uid() is not null and submitted_by = auth.uid())
+  );
+
+drop policy if exists "Posts admin write" on public.posts;
+create policy "Posts admin write"
+  on public.posts for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- Signed-in users can submit pending photo posts
+drop policy if exists "Posts user submit" on public.posts;
+create policy "Posts user submit"
+  on public.posts for insert
+  with check (
+    auth.uid() is not null
+    and submitted_by = auth.uid()
+    and status = 'pending'
+  );
+
+-- Authenticated users may upload into media/submissions/*
+drop policy if exists "Media user submission upload" on storage.objects;
+create policy "Media user submission upload"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'media'
+    and auth.uid() is not null
+    and (storage.foldername(name))[1] = 'submissions'
+  );

@@ -1,5 +1,5 @@
 import { startTransition, useEffect, useState } from 'react'
-import { mapPost, postToRow } from '../../lib/data'
+import { mapPost, postToRow, setPostStatus } from '../../lib/data'
 import { supabase } from '../../lib/supabase'
 import { useData } from '../../context/DataContext'
 import { cn, ui } from '../../lib/ui'
@@ -16,6 +16,7 @@ const empty = {
   timestamp: new Date().toISOString(),
   likeCount: 0,
   commentsCount: 0,
+  status: 'approved',
 }
 
 export default function AdminPosts() {
@@ -74,6 +75,7 @@ export default function AdminPosts() {
     setError('')
     const payload = {
       ...form,
+      status: form.status || 'approved',
       userAvatar:
         form.userAvatar ||
         `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(form.username || 'ig')}`,
@@ -100,6 +102,17 @@ export default function AdminPosts() {
     }
   }
 
+  async function onModerate(id, status) {
+    setError('')
+    try {
+      await setPostStatus(id, status)
+      await load()
+      await refresh()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   async function onDeleteComment(id) {
     if (!confirm('Delete this comment?')) return
     const { error: err } = await supabase.from('post_comments').delete().eq('id', id)
@@ -110,13 +123,64 @@ export default function AdminPosts() {
     }
   }
 
+  const pending = rows.filter((p) => p.status === 'pending')
+  const placeName = (id) => places.find((p) => p.id === id)?.name || id || '—'
+
   return (
     <div className={ui.stackLg}>
       <header>
         <h1 className={ui.display}>Posts</h1>
-        <p className={ui.muted}>Instagram-style feed items + comment moderation</p>
+        <p className={ui.muted}>Feed items, user photo submissions, and comment moderation</p>
       </header>
       {error && <p className={ui.formError}>{error}</p>}
+
+      {pending.length > 0 && (
+        <section className={ui.stack}>
+          <h2 className="text-[1.05rem] font-semibold">Approval queue ({pending.length})</h2>
+          <div className={ui.adminTableWrap}>
+            <table className={ui.adminTable}>
+              <thead>
+                <tr>
+                  <th className={ui.adminTh}>Preview</th>
+                  <th className={ui.adminTh}>Submitter</th>
+                  <th className={ui.adminTh}>Place</th>
+                  <th className={ui.adminTh} />
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((p) => (
+                  <tr key={p.id}>
+                    <td className={ui.adminTd}>
+                      <img src={p.mediaUrl} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                    </td>
+                    <td className={ui.adminTd}>
+                      <strong>@{p.username}</strong>
+                      <div className={ui.muted}>{p.caption?.slice(0, 80) || 'No caption'}</div>
+                    </td>
+                    <td className={ui.adminTd}>{placeName(p.placeId)}</td>
+                    <td className={cn(ui.adminTd, ui.adminRowActions)}>
+                      <button
+                        type="button"
+                        className={cn(ui.btn, ui.btnSm, ui.btnPrimary)}
+                        onClick={() => onModerate(p.id, 'approved')}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
+                        onClick={() => onModerate(p.id, 'rejected')}
+                      >
+                        Reject
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <form className={cn(ui.cardPanel, ui.stack)} onSubmit={onSave}>
         <h2 className="mb-3.5 text-[1.05rem] font-semibold">{editing ? 'Edit post' : 'Add post'}</h2>
@@ -208,6 +272,7 @@ export default function AdminPosts() {
             <tr>
               <th className={ui.adminTh}>Post</th>
               <th className={ui.adminTh}>Place</th>
+              <th className={ui.adminTh}>Status</th>
               <th className={ui.adminTh}>Engagement</th>
               <th className={ui.adminTh} />
             </tr>
@@ -215,7 +280,7 @@ export default function AdminPosts() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td className={ui.adminTd} colSpan={4}>
+                <td className={ui.adminTd} colSpan={5}>
                   <div className={ui.adminEmptyInline}>No posts yet — create one above.</div>
                 </td>
               </tr>
@@ -226,7 +291,8 @@ export default function AdminPosts() {
                     <strong>@{p.username}</strong>
                     <div className={ui.muted}>{p.caption?.slice(0, 80)}</div>
                   </td>
-                  <td className={ui.adminTd}>{p.placeId || '—'}</td>
+                  <td className={ui.adminTd}>{placeName(p.placeId)}</td>
+                  <td className={ui.adminTd}>{p.status || 'approved'}</td>
                   <td className={ui.adminTd}>
                     {p.likeCount} likes · {p.comments?.length || 0} comments
                   </td>
@@ -247,6 +313,7 @@ export default function AdminPosts() {
                           timestamp: p.timestamp,
                           likeCount: p.likeCount,
                           commentsCount: p.commentsCount,
+                          status: p.status || 'approved',
                         })
                         setEditing(true)
                       }}
@@ -281,22 +348,30 @@ export default function AdminPosts() {
               </tr>
             </thead>
             <tbody>
-              {comments.map((c) => (
-                <tr key={c.id}>
-                  <td className={ui.adminTd}>@{c.username}</td>
-                  <td className={ui.adminTd}>{c.body}</td>
-                  <td className={cn(ui.adminTd, ui.muted)}>{c.post_id}</td>
-                  <td className={cn(ui.adminTd, ui.adminRowActions)}>
-                    <button
-                      type="button"
-                      className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
-                      onClick={() => onDeleteComment(c.id)}
-                    >
-                      Delete
-                    </button>
+              {comments.length === 0 ? (
+                <tr>
+                  <td className={ui.adminTd} colSpan={4}>
+                    <div className={ui.adminEmptyInline}>No comments.</div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                comments.map((c) => (
+                  <tr key={c.id}>
+                    <td className={ui.adminTd}>@{c.username}</td>
+                    <td className={ui.adminTd}>{c.body}</td>
+                    <td className={ui.adminTd}>{c.post_id}</td>
+                    <td className={ui.adminTd}>
+                      <button
+                        type="button"
+                        className={cn(ui.btn, ui.btnSm, ui.btnOutline)}
+                        onClick={() => onDeleteComment(c.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

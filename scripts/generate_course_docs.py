@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate OutYah Special Projects deliverables through July 31, 2026."""
+"""Generate OutYah Special Projects deliverables (updated through August 2026)."""
 
 from pathlib import Path
 from fpdf import FPDF
@@ -13,7 +13,7 @@ PRODUCT = "OutYah"
 TAGLINE = "Jamaica Outing Discovery Platform"
 REPO = "https://github.com/KhriseanStewart/VTDI_Platform"
 LIVE = "https://vtdi-platform.vercel.app"
-DATE = "31 July 2026"
+DATE = "21 August 2026"
 
 
 class Doc(FPDF):
@@ -204,7 +204,7 @@ def write_srs():
         "US-03 As a visitor, I want venue details with hours, reviews, and directions.",
         "US-04 As a user, I want favorites synced when signed in.",
         "US-05 As a planner, I want ordered stops and Get Directions.",
-        "US-06 As a visitor, I want to browse events happening this week.",
+        "US-06 As a visitor, I want to browse island-wide events for the next six months.",
         "US-07 As an admin, I want CRUD for places, events, and posts.",
         "US-08 As a mobile user, I want bottom navigation for primary sections.",
     ]
@@ -215,13 +215,15 @@ def write_srs():
         "FR-01 Navigation to Feed, Plan, Events, Profile, Favorites; Admin when authorized.",
         "FR-02 Feed/Map toggle on home with search and category chips.",
         "FR-03 Google Map markers colored by category.",
-        "FR-04 Venue detail: gallery, actions (favorite, plan, directions), tabs.",
-        "FR-05 Events list and detail pages.",
+        "FR-04 Venue detail: gallery, actions (favorite, plan, directions), tabbed overview/reviews/hours.",
+        "FR-04a Reviews list with source badges; Google-synced snippets; OutYah submit when signed in.",
+        "FR-05 Events list and detail pages with schedule status (upcoming/live/past); sorted by date.",
         "FR-06 Auth sign-up/sign-in; profile shows session user.",
         "FR-07 Favorites and plan persist for authenticated users in Supabase.",
-        "FR-08 Admin portal gated by profiles.role = admin.",
+        "FR-08 Admin portal gated by profiles.role = admin (nested in main shell).",
         "FR-09 Empty states when Supabase has no content.",
         "FR-10 SPA routes work on Vercel via rewrite to index.html.",
+        "FR-11 Admin place create/edit supports parish, price range, media upload, map location.",
     ]
     for f in frs:
         pdf.bullet(f)
@@ -290,10 +292,11 @@ def write_design():
     )
     pdf.h1("2. Technology Selection")
     for t in [
-        "Frontend: React 19, Vite, React Router, Lucide icons",
+        "Frontend: React 19, Vite, React Router, Tailwind CSS v4, Lucide icons",
         "Backend-as-a-Service: Supabase (Postgres, Auth, RLS, Storage)",
-        "Maps: Google Maps JavaScript API + Directions API",
+        "Maps: Google Maps JavaScript API, Places Autocomplete, Directions, Place Details",
         "Hosting: Vercel (SPA rewrites in vercel.json)",
+        "Tooling: Bun for scripts and local development",
         "Version control: GitHub",
     ]:
         pdf.bullet(t)
@@ -309,8 +312,9 @@ def write_design():
     pdf.body("Core entities and relationships:")
     for t in [
         "profiles (1:1 auth.users) - role user|admin",
-        "places - venues with lat/lng, images, hours JSON, reviews JSON",
-        "events - optional FK to places",
+        "places - venues with lat/lng, cover/gallery images, hours, rating aggregates",
+        "place_reviews - source-tagged reviews (google|outyah|tripadvisor|yelp|instagram)",
+        "events - optional FK to places; starts_at/ends_at; recurring flags",
         "posts - Instagram-style media; optional FK to places",
         "post_comments - FK to posts",
         "favorites - composite PK (user_id, place_id)",
@@ -319,15 +323,26 @@ def write_design():
         pdf.bullet(t)
     pdf.mono(
         "auth.users --1:1-- profiles\n"
+        "places --1:N-- place_reviews\n"
         "places --1:N-- events\n"
         "places --1:N-- posts --1:N-- post_comments\n"
         "users --N:M-- places (via favorites)\n"
         "users --N:M-- places (via plan_stops ordered)\n"
     )
+    pdf.h2("3.1 Review model")
+    pdf.body(
+        "Visitor reviews no longer live only as JSONB on places. The place_reviews table stores "
+        "author, rating, body, optional business reply, posted_at, and a source tag so the UI can "
+        "badge Google, OutYah, Tripadvisor, and other origins. A trigger keeps places.review_count "
+        "aligned with stored rows. Place ratings displayed on cards use Google Place Details "
+        "aggregates when synced; listed review snippets come from the Places API (most relevant + "
+        "newest). Signed-in users may insert OutYah-sourced reviews only."
+    )
     pdf.h1("4. Security Design (RLS)")
     for t in [
-        "Public SELECT on places, events, posts, comments",
+        "Public SELECT on places, events, posts, comments, place_reviews",
         "Admin ALL on catalog tables via is_admin()",
+        "Authenticated users INSERT OutYah reviews for themselves only",
         "Users manage only their favorites and plan_stops",
         "Storage bucket media: public read, admin write",
     ]:
@@ -340,16 +355,18 @@ def write_design():
     )
     pdf.h1("5. Interface Design")
     pdf.body(
-        "Public shell: desktop sidebar + mobile bottom nav. Home uses a Feed/Map segmented "
-        "control. Admin uses a separate layout without public bottom navigation. Empty states "
-        "provide clear CTAs when catalogs are empty."
+        "Public and admin navigation share one application shell: desktop sidebar and mobile bottom "
+        "nav, with admin links nested under Favorites for authorized users. Home uses a Feed/Map "
+        "segmented control and a places grid with cover imagery. Venue detail tabs include Overview, "
+        "Reviews (source-filtered), Instagram posts, and Hours. Empty states provide clear CTAs when "
+        "catalogs are empty."
     )
     pdf.h2("5.1 Responsive behavior")
     for t in [
         "Desktop: persistent left navigation and multi-column content grids.",
         "Mobile: fixed bottom navigation, horizontally scrollable chips, and single-column forms.",
-        "Feed cards emphasize photography with minimal borders and no heavy elevation.",
-        "Admin tables scroll horizontally on small screens while forms collapse to one column.",
+        "Feed and place cards emphasize photography; Tailwind utility recipes live in src/lib/ui.js.",
+        "Admin forms use parish dropdowns, Google Places location pickers, and media uploads.",
     ]:
         pdf.bullet(t)
     pdf.h2("5.2 Data-state behavior")
@@ -374,7 +391,8 @@ def write_design():
     for t in [
         "Build: bun/vite -> dist/",
         "Vercel env: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GOOGLE_MAPS_API_KEY",
-        "DB script: supabase/full_setup.sql (schema + optional seed)",
+        "DB scripts: supabase/migrations/001_init.sql, 002_events_schedule.sql, 003_place_reviews.sql",
+        "Optional: supabase/full_setup.sql; seed helpers under scripts/",
         "Client never receives service_role key",
     ]:
         pdf.bullet(t)
@@ -383,8 +401,22 @@ def write_design():
         "AuthContext: session lifecycle, profile lookup, sign-in, sign-up, sign-out, admin role.",
         "DataContext: Supabase catalog queries, refresh, and in-memory lookup helpers.",
         "AppContext: favorites and ordered plan state, including per-user persistence.",
-        "lib/data.js: database-row to UI-model mapping and Supabase query functions.",
-        "pages/admin: protected dashboard and CRUD interfaces.",
+        "lib/data.js: database-row mapping, place/event/post queries, place review CRUD.",
+        "lib/reviews.js: review source metadata, mapping, and rating helpers.",
+        "PlaceReviews: source filters, Google/OutYah list, signed-in submit form.",
+        "pages/admin: auth-gated CRUD nested in the main shell (AdminLayout is gate only).",
+        "scripts/seed_jamaica_catalog.mjs: island-wide places + 6-month events upsert.",
+        "scripts/seed_jamaica_island_photos.mjs: Google photos for island venues.",
+        "scripts/seed_real_place_reviews.mjs: sync Google Place Details reviews into place_reviews.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("9. External integrations")
+    for t in [
+        "Google Maps JS: map markers, venue map, multi-stop directions URLs.",
+        "Google Places Autocomplete: admin location picker (address, lat/lng).",
+        "Google Place Details: real venue ratings and review text for seeding/sync.",
+        "Supabase Storage media bucket: place cover and gallery uploads.",
+        "Instagram Graph: optional; tokens may be empty - posts remain admin-managed.",
     ]:
         pdf.bullet(t)
     out = DOCS / "03_OutYah_System_Design_Document.pdf"
@@ -410,9 +442,9 @@ def write_prototype_notes():
     for t in [
         "Responsive application shell: desktop sidebar and mobile bottom navigation.",
         "Home discovery feed with search, category chips, event strip, and Feed/Map switch.",
-        "Venue detail gallery, metadata, reviews, hours, favorites, and plan actions.",
+        "Venue detail gallery, metadata, source-tagged reviews, hours, favorites, and plan actions.",
         "Favorites grid and outing planner with suggested stops.",
-        "Events list and event detail routes.",
+        "Events list and event detail routes with schedule status badges.",
         "Google Maps markers, category differentiation, and directions links.",
     ]:
         pdf.bullet(t)
@@ -456,18 +488,20 @@ def write_prototype_notes():
 def write_beta_notes():
     pdf = Doc("OutYah - Beta Version Notes")
     pdf.cover(
-        "Beta Version (Development II)",
+        "Beta Version (Development II) + August Updates",
         TAGLINE,
-        "Week 5 Deliverable (July 27 - July 31, 2026)",
+        "Week 5 deliverable (27-31 July 2026) with post-beta updates through 21 August 2026",
     )
     pdf.add_page()
     pdf.h1("1. Prototype v1 -> Beta summary")
     pdf.body(
         "Prototype v1 established routing, discovery UI, maps, and planner flows on curated "
-        "data. Beta completes backend integration, auth, admin, empty states, and production "
-        "deployment configuration."
+        "data. Beta completed backend integration, auth, admin, empty states, and production "
+        "deployment. August updates harden content quality: real Kingston venues, island-wide "
+        "tourist catalog, six-month events calendar, Google-synced reviews, Tailwind UI recipes, "
+        "and removal of mock social counts."
     )
-    pdf.h1("2. Features included in Beta")
+    pdf.h1("2. Features included in Beta (through July 31)")
     for t in [
         "Feed/Map discovery with category filters and search",
         "Venue detail, events, favorites, outing planner + directions",
@@ -478,23 +512,97 @@ def write_beta_notes():
         "Vercel hosting with SPA rewrites",
     ]:
         pdf.bullet(t)
-    pdf.h1("3. Backend Integration")
+    pdf.h1("3. Post-beta updates (August 2026)")
+    pdf.h2("3.1 Real place reviews")
+    for t in [
+        "New place_reviews table (migration 003) with source tags and RLS.",
+        "Venue Reviews tab lists live Google Place Details snippets (most relevant + newest).",
+        "Source badges (via Google / OutYah); signed-in users can post OutYah reviews.",
+        "Place card ratings use Google aggregates; review counts match listed snippets.",
+        "Invented Tripadvisor/Yelp/press seed copy and mock RSVP/like numbers removed.",
+        "Instagram cannot supply venue reviews via API; IG remains posts/media only.",
+    ]:
+        pdf.bullet(t)
+    pdf.h2("3.2 Kingston catalog and events")
+    for t in [
+        "Kingston venues seeded with real names, addresses, and Google/Street View photos.",
+        "Events gained starts_at, ends_at, recurring, recurrence_note (migration 002).",
+        "Status badges: Upcoming / Happening now / Past; feed shows next upcoming events.",
+        "Events page covers the next six months island-wide (not week-only).",
+    ]:
+        pdf.bullet(t)
+    pdf.h2("3.3 Island-wide catalog (19 August 2026)")
+    for t in [
+        "36 new tourist places across Negril, Montego Bay, Ocho Rios, Portland, south coast, "
+        "Blue Mountains, and Kingston extras (49 places total in production).",
+        "53 scheduled events Aug 2026 - Feb 2027: jerk festivals, Reggae Marathon, Rebel Salute, "
+        "Jazz & Blues, Heroes Day, Christmas Market, NYE parties, recurring venue nights.",
+        "scripts/data/jamaica_places.mjs and jamaica_events.mjs hold curated seed definitions.",
+        "bun scripts/seed_jamaica_catalog.mjs upserts places + events in one step.",
+        "bun scripts/seed_jamaica_island_photos.mjs syncs Google photos to Supabase Storage.",
+        "Map and feed now span the full island, not Kingston metro only.",
+    ]:
+        pdf.bullet(t)
+    pdf.h2("3.4 Landing, share plans, and photo moderation (21 August 2026)")
+    for t in [
+        "Branded landing page at / with Terobytez logo; Explore moved to /explore.",
+        "Shareable outing plans: migration 004 shared_plans + /plan/share links; recipients can add stops.",
+        "Planner stop reorder (move up / down) and Get Directions multi-stop Google Maps URLs.",
+        "Users submit venue photos from place detail (pending); admins approve/reject in Posts queue (migration 005).",
+        "Booking contact: call-to-book via phone; optional time-slot chips when curated on a place.",
+        "Special Project proposal DOCX updated to as-built feature list matching the live site.",
+    ]:
+        pdf.bullet(t)
+    pdf.h2("3.5 Admin and UI")
+    for t in [
+        "Admin nested in the main shell (auth gate only; no separate chrome).",
+        "Place form: Jamaican parish dropdown, price bounds, cover/gallery upload to Storage.",
+        "Google Places Autocomplete + map for lat/lng/address (hidden from raw form fields).",
+        "Tailwind CSS v4 + shared UI recipes in src/lib/ui.js.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("4. Backend Integration")
     pdf.body(
-        "The beta uses Supabase as the only catalog database. DataContext loads places, events, "
+        "OutYah uses Supabase as the catalog database. DataContext loads places, events, "
         "posts, and comments from PostgREST. AuthContext manages email/password sessions and "
         "profile roles. AppContext synchronizes favorites and ordered plan stops for signed-in "
-        "users while retaining device-local selections for guests."
+        "users while retaining device-local selections for guests. Reviews load on demand from "
+        "place_reviews via fetchReviewsForPlace / createPlaceReview."
     )
-    pdf.h2("3.1 Admin workflow")
+    pdf.h2("4.1 Admin workflow")
     for t in [
         "Admin signs in and is authorized through profiles.role.",
         "Dashboard displays catalog totals.",
         "Places, events, and posts can be created, updated, and deleted.",
-        "Place slugs are generated from name and append area when duplicated.",
+        "Place media uploads go to the public media storage bucket.",
         "Public pages refresh from Supabase after admin changes.",
     ]:
         pdf.bullet(t)
-    pdf.h1("4. How to run")
+    pdf.h2("4.2 Review sync scripts")
+    pdf.mono(
+        "# Island-wide places + 6-month events\n"
+        "bun scripts/seed_jamaica_catalog.mjs\n"
+        "\n"
+        "# Google photos (island venues)\n"
+        "bun scripts/seed_jamaica_island_photos.mjs\n"
+        "\n"
+        "# Apply reviews schema + pull Google Place Details reviews\n"
+        "bun scripts/seed_real_place_reviews.mjs\n"
+        "\n"
+        "# Kingston venues / photos (service role + Maps key)\n"
+        "bun scripts/seed_kingston_places.mjs\n"
+        "bun scripts/seed_place_photos_from_google.mjs\n"
+    )
+    pdf.h2("4.3 Live catalog totals (production Supabase)")
+    for t in [
+        "49 places across 9 parishes (Kingston, Westmoreland, St. James, St. Ann, Portland, "
+        "St. Elizabeth, Trelawny, St. Andrew, St. Catherine).",
+        "53 events with starts_at/ends_at spanning Aug 2026 through Feb 2027.",
+        "198 Google-sourced review snippets in place_reviews (27 venues synced).",
+        "See docs/database/CATALOG.md for parish breakdown and event highlights.",
+    ]:
+        pdf.bullet(t)
+    pdf.h1("5. How to run")
     pdf.mono(
         "bun install\n"
         "cp .env.example .env   # add Supabase + Maps keys\n"
@@ -502,30 +610,37 @@ def write_beta_notes():
         "# optional schema apply:\n"
         "bun scripts/apply_supabase_schema.mjs\n"
     )
-    pdf.h1("5. Database script location")
-    pdf.bullet("supabase/migrations/001_init.sql - schema + RLS")
-    pdf.bullet("supabase/seed.sql - optional sample seed")
-    pdf.bullet("supabase/full_setup.sql - combined apply script")
-    pdf.bullet("docs/database/ copies for submission package")
-    pdf.h1("6. Beta Acceptance Checks")
+    pdf.h1("6. Database script location")
+    pdf.bullet("supabase/migrations/001_init.sql - core schema + RLS")
+    pdf.bullet("supabase/migrations/002_events_schedule.sql - event schedule columns")
+    pdf.bullet("supabase/migrations/003_place_reviews.sql - place_reviews + stats trigger")
+    pdf.bullet("supabase/seed.sql / full_setup.sql - optional combined apply")
+    pdf.bullet("docs/database/ - submission copies of schema scripts + CATALOG.md")
+    pdf.h1("7. Acceptance Checks")
     for t in [
-        "Production build passes.",
-        "Supabase tables, RLS policies, and storage bucket are created.",
-        "Catalog may be intentionally empty; polished empty states render correctly.",
+        "Production build passes; Vercel deep links resolve via SPA rewrite.",
+        "Supabase tables, RLS, and media bucket exist; place_reviews publicly readable.",
+        "Venue Reviews tab shows Google-sourced text with source badges.",
         "Admin routes reject signed-out and non-admin users.",
-        "Vercel deep links resolve through the SPA rewrite.",
+        "Production Supabase seeded: 49 places, 53 events, 198 Google reviews.",
+        "Map spans Negril, MoBay, Ocho Rios, Portland, south coast, and Kingston.",
+        "Event cards do not invent going/interested counts; IG likes hidden when zero.",
+        "Live app: https://vtdi-platform.vercel.app",
     ]:
         pdf.bullet(t)
-    pdf.h1("7. Known limitations")
+    pdf.h1("8. Known limitations")
     for t in [
-        "Live Instagram Graph sync not required; posts managed in admin.",
+        "Google Place Details returns a small sample of reviews (not the full public total).",
+        "Tripadvisor blocks automated scraping; not synced live.",
+        "Instagram Graph tokens optional; no venue-review API from Instagram.",
+        "Event RSVP is not implemented; going/interested remain unset.",
         "Plan stop drag-reorder UI is visual only; order follows add sequence.",
         "Email confirmation depends on Supabase Auth project settings.",
     ]:
         pdf.bullet(t)
-    pdf.h1("8. Next phase (Week 6+)")
+    pdf.h1("9. Next phase")
     pdf.bullet("Formal testing report and user manual")
-    pdf.bullet("Bug bash and UI polish")
+    pdf.bullet("Optional RSVP and live hours from Google Places Opening Hours")
     pdf.bullet("Final presentation package")
     out = DOCS / "05_OutYah_Beta_Version_Notes.pdf"
     pdf.output(out)
@@ -548,7 +663,7 @@ def write_submission_checklist():
         "Week 4 - Prototype v1 -> GitHub history + live Vercel app",
         "Week 5 - Beta -> source + admin/auth/Supabase + docs/05_OutYah_Beta_Version_Notes.pdf",
         "Professional practice - Weekly reports -> docs/04_OutYah_Weekly_Progress_Reports_Weeks_1-5.pdf",
-        "Database script -> docs/database/full_setup.sql",
+        "Database script -> docs/database/full_setup.sql + docs/database/CATALOG.md",
         "Source code -> GitHub repository",
         "Working software -> https://vtdi-platform.vercel.app",
     ]
@@ -568,6 +683,7 @@ def write_submission_checklist():
 
 if __name__ == "__main__":
     outs = [
+        write_srs(),
         write_design(),
         write_prototype_notes(),
         write_beta_notes(),

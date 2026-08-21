@@ -73,6 +73,23 @@ export const ui = {
   searchBar:
     'flex items-center gap-2.5 rounded-full border border-border bg-card px-4 py-3.5 text-muted',
   searchInput: 'flex-1 border-none bg-transparent text-fg outline-none',
+  discoverPanel:
+    'overflow-hidden rounded-[1.35rem] border border-border bg-card shadow-[var(--shadow-soft)]',
+  discoverRow:
+    'grid grid-cols-1 divide-y divide-border sm:grid-cols-[1.2fr_1fr_auto] sm:divide-x sm:divide-y-0',
+  discoverField: 'flex flex-col gap-1 px-4 py-3.5 text-left',
+  discoverFieldLabel: 'text-[0.72rem] font-bold uppercase tracking-wider text-muted',
+  discoverFieldControl:
+    'w-full border-none bg-transparent p-0 text-[0.95rem] font-semibold text-fg outline-none',
+  discoverSearchBtn:
+    'm-2 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-[0.9rem] font-semibold text-on-primary hover:bg-primary/90 sm:self-center',
+  popularStrip:
+    'flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+  popularMosaic:
+    'flex min-w-full overflow-hidden rounded-[1.35rem] border border-border bg-border sm:inline-flex sm:min-w-0',
+  popularCard:
+    'flex min-w-[15.5rem] shrink-0 items-center gap-3 border-r border-border bg-card p-2.5 pr-3 last:border-r-0 transition-colors hover:bg-[color-mix(in_oklab,var(--color-primary)_5%,var(--color-card))] sm:min-w-[16.5rem]',
+  popularCardImg: 'h-14 w-14 shrink-0 rounded-xl object-cover',
   chips: 'flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
   chipsSticky:
     'sticky top-0 z-10 bg-[color-mix(in_oklab,var(--color-bg)_88%,transparent)] py-2 backdrop-blur-sm',
@@ -105,10 +122,12 @@ export const ui = {
 
   // events
   eventStrip: 'flex gap-4 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-  eventGrid: 'grid grid-cols-1 gap-[1.15rem] min-[720px]:grid-cols-2',
-  eventCard: 'block bg-transparent',
-  eventCardCompact: 'w-64 shrink-0',
-  eventCardMedia: 'relative aspect-[16/10] overflow-hidden rounded-[0.9rem]',
+  eventGrid:
+    'grid grid-cols-1 gap-px overflow-hidden rounded-[1.35rem] border border-border bg-border sm:grid-cols-2 lg:grid-cols-3',
+  eventCard:
+    'block bg-card transition-colors hover:bg-[color-mix(in_oklab,var(--color-primary)_5%,var(--color-card))]',
+  eventCardCompact: 'w-64 shrink-0 overflow-hidden rounded-[0.9rem] border border-border',
+  eventCardMedia: 'relative aspect-[16/10] overflow-hidden',
   eventType:
     'absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-[0.7rem] font-bold text-on-accent',
   eventWhen:
@@ -121,10 +140,17 @@ export const ui = {
   eventBadgeUpcoming: 'bg-primary text-on-primary',
   eventBadgeRecurring: 'bg-accent text-on-accent',
   eventPastCard: 'opacity-70',
-  eventCardBody: 'pt-3',
+  eventCardBody: 'p-4',
   eventCardBodyTitle: 'text-[0.98rem] font-bold',
   eventCardBodyMeta: 'mt-1.5 flex items-center gap-1.5 text-[0.82rem] text-muted',
   eventCardFoot: 'mt-3.5 flex items-center justify-between',
+  eventCardType: 'text-[0.72rem] font-bold uppercase tracking-wide text-primary',
+  eventMosaic:
+    'grid grid-cols-1 gap-px overflow-hidden rounded-[1.35rem] border border-border bg-border sm:grid-cols-2 lg:grid-cols-3',
+  eventMosaicItem:
+    'group block bg-card transition-colors hover:bg-[color-mix(in_oklab,var(--color-primary)_5%,var(--color-card))]',
+  eventMosaicMedia: 'aspect-[16/10] overflow-hidden',
+  eventMosaicBody: 'p-4',
   avatarStack: 'flex items-center gap-1.5 text-[0.75rem] font-semibold text-muted',
   avatarStackImg: '-ml-1.5 h-6 w-6 rounded-full border-2 border-card first:ml-0',
   avatarStackImgLarge: '-ml-1.5 h-[2.2rem] w-[2.2rem] rounded-full border-2 border-card first:ml-0',
