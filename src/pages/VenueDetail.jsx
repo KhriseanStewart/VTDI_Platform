@@ -209,8 +209,6 @@ export default function VenueDetail() {
         </section>
       )}
 
-      <VenuePhotoSubmit placeId={place.id} placeName={place.name} />
-
       <div className="flex gap-[0.35rem] border-b border-border">
         {['overview', 'reviews', 'instagram', 'hours'].map((t) => (
           <button
@@ -283,8 +281,8 @@ export default function VenueDetail() {
             <EmptyState
               icon={Camera}
               eyebrow="Posts"
-              title="No posts for this place"
-              description="When the community (or admin) tags this venue, photos and comments will show here."
+              title="No community posts yet"
+              description="This venue is already live. Optional: share a photo for the feed — it appears after admin review."
             />
           ) : (
             igPosts.map((post) => (
@@ -321,6 +319,7 @@ export default function VenueDetail() {
               </article>
             ))
           )}
+          <VenuePhotoSubmit placeId={place.id} placeName={place.name} />
         </div>
       )}
 

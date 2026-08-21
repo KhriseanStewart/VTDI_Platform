@@ -64,10 +64,11 @@ export default function VenuePhotoSubmit({ placeId, placeName }) {
   return (
     <form onSubmit={onSubmit} className={cn(ui.cardPanel, ui.stack)}>
       <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
-        <Camera size={16} /> Submit a photo
+        <Camera size={16} /> Add a community photo
       </p>
       <p className={cn(ui.muted, 'text-sm')}>
-        Images stay private until an admin approves them for the public feed.
+        Optional — this venue is already live. New photos only appear in the feed after admin
+        review.
       </p>
       <label className={ui.field}>
         <span className={ui.fieldLabel}>Photo</span>
@@ -90,7 +91,7 @@ export default function VenuePhotoSubmit({ placeId, placeName }) {
       </label>
       {error && <p className={ui.formError}>{error}</p>}
       <button type="submit" className={btn(ui.btnPrimary)} disabled={busy}>
-        {busy ? 'Uploading…' : 'Submit for approval'}
+        {busy ? 'Uploading…' : 'Submit photo'}
       </button>
     </form>
   )
