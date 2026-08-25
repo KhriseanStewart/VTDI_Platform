@@ -17,9 +17,10 @@ export default function MediaReel({
   when,
   actions = [],
   compact = false,
+  fullScreen = false,
 }) {
   return (
-    <article className={cn(ui.reel, compact && ui.reelCompact)}>
+    <article className={cn(ui.reel, compact && ui.reelCompact, fullScreen && ui.reelFull)}>
       <Link to={to} className={ui.reelHit}>
         <img
           src={image}

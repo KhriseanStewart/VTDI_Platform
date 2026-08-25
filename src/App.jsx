@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import Landing from './pages/Landing'
 import HomeFeed from './pages/HomeFeed'
+import Feed from './pages/Feed'
 import VenueDetail from './pages/VenueDetail'
 import Favorites from './pages/Favorites'
 import Planner from './pages/Planner'
@@ -23,6 +24,7 @@ export default function App() {
 
       <Route element={<Layout />}>
         <Route path="explore" element={<HomeFeed />} />
+        <Route path="feed" element={<Feed />} />
         <Route path="place/:id" element={<VenueDetail />} />
         <Route path="favorites" element={<Favorites />} />
         <Route path="plan" element={<Planner />} />

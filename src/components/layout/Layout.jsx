@@ -9,6 +9,7 @@ import {
   MapPin,
   Calendar,
   Camera,
+  GalleryVerticalEnd,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
@@ -18,6 +19,7 @@ import { cn, ui } from '../../lib/ui'
 const NAV = [
   { to: '/explore', label: 'Explore', icon: Compass, end: true },
   { to: '/plan', label: 'Plan', icon: Route },
+  { to: '/feed', label: 'Feed', icon: GalleryVerticalEnd },
   { to: '/events', label: 'Events', icon: Ticket },
   { to: '/profile', label: 'Profile', icon: User },
 ]

@@ -11,7 +11,7 @@ function formatCount(n) {
   return String(n)
 }
 
-export default function PlaceCard({ place, compact = false }) {
+export default function PlaceCard({ place, compact = false, fullScreen = false, image }) {
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite, isInPlan, togglePlan } = useApp()
   const fav = isFavorite(place.id)
@@ -22,8 +22,9 @@ export default function PlaceCard({ place, compact = false }) {
   return (
     <MediaReel
       to={path}
-      image={place.image}
+      image={image || place.image}
       alt={place.name}
+      fullScreen={fullScreen}
       handle={reelHandle(place.name)}
       title={place.name}
       caption={`${location}${place.priceRange ? ` · ${priceLabel(place.priceRange)}` : ''}`}

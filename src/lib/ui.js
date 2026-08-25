@@ -209,6 +209,14 @@ export const ui = {
     motion,
   ),
   reelCompact: 'w-[13.5rem] shrink-0 sm:w-[14.5rem]',
+  reelFull:
+    'aspect-auto h-full min-h-[calc(100dvh-7.5rem)] w-full max-w-none rounded-none shadow-none lg:mx-auto lg:max-h-[calc(100dvh-5rem)] lg:max-w-[26rem] lg:rounded-2xl lg:shadow-[var(--shadow-card)]',
+  feedShell: '-mx-4 -mt-5 flex min-h-[calc(100dvh-7.5rem)] flex-col sm:-mx-6 lg:-mx-10 lg:mt-0 lg:min-h-[calc(100dvh-5rem)]',
+  feedHead:
+    'sticky top-0 z-20 border-b border-border/80 bg-bg/90 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-4',
+  feedScroller:
+    'min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth [-webkit-overflow-scrolling:touch]',
+  feedSlide: 'h-[calc(100dvh-7.5rem)] snap-start snap-always lg:h-[calc(100dvh-5rem)]',
   reelHit: cn('absolute inset-0 block', focus),
   reelImg: cn(
     'absolute inset-0 h-full w-full object-cover brightness-[0.78] contrast-[1.06] saturate-[0.95] group-hover:scale-[1.04]',
