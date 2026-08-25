@@ -36,6 +36,7 @@ export default function Layout() {
   const { user, profile, isAdmin } = useAuth()
   const { pathname } = useLocation()
   const onAdmin = pathname.startsWith('/admin')
+  const onFeed = pathname === '/feed'
 
   const displayName = profile?.name || user?.email?.split('@')[0] || 'Guest'
   const handle = profile?.handle || (user ? `@${user.email?.split('@')[0]}` : 'Sign in to sync')
@@ -108,7 +109,12 @@ export default function Layout() {
       </aside>
 
       <div className={ui.shellMain}>
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-bg/85 px-4 py-2.5 backdrop-blur-xl lg:hidden">
+        <header
+          className={cn(
+            'sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-bg/85 px-4 py-2.5 backdrop-blur-xl lg:hidden',
+            onFeed && 'hidden',
+          )}
+        >
           <Logo size="sm" />
           <Link
             to={user ? '/profile' : '/auth?next=/profile'}
@@ -119,7 +125,7 @@ export default function Layout() {
           </Link>
         </header>
 
-        <main className={ui.page}>
+        <main className={cn(ui.page, onFeed && ui.pageFeed)}>
           {isAdmin && onAdmin && (
             <nav className="mb-5 flex gap-1.5 overflow-x-auto pb-1 rail-scroll lg:hidden" aria-label="Admin">
               {ADMIN_NAV.map(({ to, label, icon: Icon, end }) => (

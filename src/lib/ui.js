@@ -22,6 +22,7 @@ export const ui = {
     'hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-[16.5rem] lg:flex-col lg:border-r lg:border-border lg:bg-card lg:px-4 lg:py-5',
   shellMain: 'min-h-dvh lg:pl-[16.5rem]',
   page: 'mx-auto w-full max-w-[1180px] px-4 pb-28 pt-5 sm:px-6 lg:px-10 lg:pb-16 lg:pt-9',
+  pageFeed: 'mx-auto w-full max-w-none px-0 pb-28 pt-0 lg:max-w-[1180px] lg:px-10 lg:pb-16 lg:pt-9',
   pageWide: 'mx-auto w-full max-w-[1320px] px-4 pb-28 pt-5 sm:px-6 lg:px-10 lg:pb-16 lg:pt-9',
   bottomNav:
     'fixed inset-x-0 bottom-0 z-40 flex justify-around gap-1 border-t border-border bg-card/92 px-2 pt-1.5 pb-[calc(0.45rem+env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden',
@@ -210,13 +211,11 @@ export const ui = {
   ),
   reelCompact: 'w-[13.5rem] shrink-0 sm:w-[14.5rem]',
   reelFull:
-    'aspect-auto h-full min-h-[calc(100dvh-7.5rem)] w-full max-w-none rounded-none shadow-none lg:mx-auto lg:max-h-[calc(100dvh-5rem)] lg:max-w-[26rem] lg:rounded-2xl lg:shadow-[var(--shadow-card)]',
-  feedShell: '-mx-4 -mt-5 flex min-h-[calc(100dvh-7.5rem)] flex-col sm:-mx-6 lg:-mx-10 lg:mt-0 lg:min-h-[calc(100dvh-5rem)]',
-  feedHead:
-    'sticky top-0 z-20 border-b border-border/80 bg-bg/90 px-4 py-2.5 backdrop-blur-xl sm:px-6 lg:px-4',
+    'aspect-auto h-full min-h-[calc(100dvh-4.5rem)] w-full max-w-none rounded-none shadow-none lg:mx-auto lg:max-h-[calc(100dvh-5rem)] lg:max-w-[26rem] lg:rounded-2xl lg:shadow-[var(--shadow-card)]',
+  feedShell: '-mx-0 flex min-h-[calc(100dvh-4.5rem)] flex-col lg:min-h-[calc(100dvh-5rem)]',
   feedScroller:
     'min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth [-webkit-overflow-scrolling:touch]',
-  feedSlide: 'h-[calc(100dvh-7.5rem)] snap-start snap-always lg:h-[calc(100dvh-5rem)]',
+  feedSlide: 'h-[calc(100dvh-4.5rem)] snap-start snap-always lg:h-[calc(100dvh-5rem)]',
   reelHit: cn('absolute inset-0 block', focus),
   reelImg: cn(
     'absolute inset-0 h-full w-full object-cover brightness-[0.78] contrast-[1.06] saturate-[0.95] group-hover:scale-[1.04]',
