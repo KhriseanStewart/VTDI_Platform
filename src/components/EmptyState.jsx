@@ -35,7 +35,7 @@ export default function EmptyState({
   return (
     <div
       className={cn(
-        'relative overflow-hidden grid justify-items-center text-center gap-[0.55rem] py-11 px-6 border border-border rounded-[1.25rem]',
+        'relative grid justify-items-center gap-[0.55rem] overflow-hidden rounded-2xl border border-border px-6 py-12 text-center',
         TONE_BG[t],
       )}
       role="status"
@@ -49,7 +49,7 @@ export default function EmptyState({
       />
       <div
         className={cn(
-          'relative mb-[0.35rem] grid h-16 w-16 place-items-center rounded-[1.15rem] animate-empty-float',
+          'relative mb-[0.35rem] grid h-16 w-16 animate-empty-float place-items-center rounded-2xl',
           TONE_ORB[t],
         )}
         aria-hidden="true"

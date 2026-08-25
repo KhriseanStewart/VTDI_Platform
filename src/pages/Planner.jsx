@@ -1,14 +1,28 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Trash2, Navigation, MapPin, Route, Share2, ChevronUp, ChevronDown } from 'lucide-react'
+import {
+  Trash2,
+  Navigation,
+  MapPin,
+  Route,
+  Share2,
+  ChevronUp,
+  ChevronDown,
+  Plus,
+  Star,
+} from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import { RouteMap } from '../components/maps/GoogleMaps'
 import EmptyState from '../components/EmptyState'
+import CostEstimate from '../components/CostEstimate'
 import SharePlanSheet from '../components/SharePlanSheet'
+import { priceLabel } from '../data/outyahData'
 import { directionsUrl } from '../lib/maps'
 import { btn, cn, ui } from '../lib/ui'
+
+const SUGGESTION_LIMIT = 8
 
 export default function Planner() {
   const { plan, removeFromPlan, addToPlan, clearPlan, movePlanStop } = useApp()
@@ -16,7 +30,41 @@ export default function Planner() {
   const { user } = useAuth()
   const [shareOpen, setShareOpen] = useState(false)
   const stops = plan.map((id) => getPlace(id)).filter(Boolean)
-  const suggestions = places.filter((p) => !plan.includes(p.id)).slice(0, 6)
+
+  // rank by parish match with the current plan, then rating — not alphabetical
+  const { suggestions, suggestionNote } = useMemo(() => {
+    const inPlan = new Set(plan)
+    const areas = new Set(
+      plan.map((id) => places.find((p) => p.id === id)?.area).filter(Boolean),
+    )
+
+    const ranked = places
+      .filter((p) => !inPlan.has(p.id))
+      .map((p) => ({
+        place: p,
+        near: areas.has(p.area) ? 1 : 0,
+        rating: Number(p.rating) || 0,
+        reviews: Number(p.reviewCount) || 0,
+      }))
+      .sort((a, b) => b.near - a.near || b.rating - a.rating || b.reviews - a.reviews)
+      .slice(0, SUGGESTION_LIMIT)
+      .map((s) => s.place)
+
+    const list = [...areas]
+    const where =
+      list.length === 0
+        ? ''
+        : list.length <= 2
+          ? list.join(' and ')
+          : `${list.slice(0, 2).join(', ')} and more`
+
+    return {
+      suggestions: ranked,
+      suggestionNote: where
+        ? `Top rated near your stops in ${where}`
+        : 'Highest rated across the island',
+    }
+  }, [places, plan])
 
   return (
     <div className={ui.stackLg}>
@@ -41,7 +89,7 @@ export default function Planner() {
       </header>
 
       {!user && (
-        <p className={ui.igSourceNote}>
+        <p className={ui.note}>
           <Link to="/auth?next=/plan" className={ui.textLink}>
             Sign in
           </Link>{' '}
@@ -67,13 +115,13 @@ export default function Planner() {
             />
           ) : (
             <div className={ui.stack}>
-              <ol className="m-0 overflow-hidden rounded-[1.35rem] border border-border bg-border p-0">
+              <ol className={cn(ui.listGroup, 'm-0 p-0')}>
                 {stops.map((p, i) => (
                   <li
                     key={p.id}
-                    className="grid grid-cols-[auto_auto_auto_1fr_auto] items-center gap-[0.65rem] border-b border-border bg-card p-3 last:border-b-0"
+                    className="grid grid-cols-[auto_auto_auto_1fr_auto] items-center gap-2.5 p-3"
                   >
-                    <span className="grid h-[1.7rem] w-[1.7rem] place-items-center rounded-full bg-primary text-[0.8rem] font-bold text-on-primary">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[0.8rem] font-bold text-on-primary">
                       {i + 1}
                     </span>
                     <div className="flex flex-col gap-0.5">
@@ -142,21 +190,32 @@ export default function Planner() {
           )}
         </div>
 
-        <div className={ui.mapPanel}>
-          <div
-            className={cn(
-              ui.mapCanvas,
-              ui.mapCanvasSm,
-              'min-[900px]:h-[420px] min-[900px]:min-h-[420px]',
-            )}
-          >
-            <RouteMap stops={stops} />
+        <div className={ui.stack}>
+          <CostEstimate places={stops} />
+          <div className={ui.mapPanel}>
+            <div
+              className={cn(
+                ui.mapCanvas,
+                ui.mapCanvasSm,
+                'min-[900px]:h-[420px] min-[900px]:min-h-[420px]',
+              )}
+            >
+              <RouteMap stops={stops} />
+            </div>
           </div>
         </div>
       </div>
 
       <section>
-        <h2 className={ui.sectionHeadTitle}>Suggested stops</h2>
+        <div className={ui.sectionHead}>
+          <div>
+            <h2 className={ui.sectionHeadTitle}>Suggested stops</h2>
+            <p className={cn(ui.small, 'mt-0.5')}>{suggestionNote}</p>
+          </div>
+          <Link to="/explore" className={ui.textLink}>
+            Browse all
+          </Link>
+        </div>
         {suggestions.length === 0 ? (
           <EmptyState
             icon={MapPin}
@@ -165,25 +224,56 @@ export default function Planner() {
             description="Once places exist in Supabase, we'll recommend stops you haven't added yet."
           />
         ) : (
-          <div className="mt-3.5 overflow-hidden rounded-[1.35rem] border border-border bg-border">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {suggestions.map((p) => (
-              <button
+              <article
                 key={p.id}
-                type="button"
-                className="grid w-full cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-border bg-card p-3 text-left last:border-b-0 hover:bg-[color-mix(in_oklab,var(--color-primary)_5%,var(--color-card))]"
-                onClick={() => addToPlan(p.id)}
+                className={cn(ui.cardFlat, ui.cardHover, 'flex items-center gap-3 p-2.5')}
               >
-                <img
-                  src={p.image}
-                  alt=""
-                  className="h-[3.25rem] w-[3.25rem] rounded-[0.85rem] object-cover"
-                />
-                <span>
-                  <strong className="block">{p.name}</strong>
-                  <small className="block text-muted">{p.area}</small>
-                </span>
-                <em className="text-[0.85rem] font-bold not-italic text-primary">Add</em>
-              </button>
+                <Link to={`/place/${p.id}`} className={cn('shrink-0 rounded-xl', ui.focus)}>
+                  <img
+                    src={p.image}
+                    alt=""
+                    loading="lazy"
+                    className="h-16 w-16 rounded-xl bg-border object-cover"
+                  />
+                </Link>
+
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`/place/${p.id}`}
+                    className={cn(
+                      'block truncate text-[0.95rem] font-bold hover:text-primary',
+                      ui.focus,
+                    )}
+                  >
+                    {p.name}
+                  </Link>
+                  <span className="mt-0.5 flex items-center gap-1 truncate text-[0.8rem] text-muted">
+                    <MapPin size={12} className="shrink-0" />
+                    {[p.neighborhood, p.area].filter(Boolean).join(', ')}
+                  </span>
+                  <span className="mt-1 flex items-center gap-2 text-[0.8rem] text-muted">
+                    {Number(p.rating) > 0 && (
+                      <span className="inline-flex items-center gap-1 font-semibold text-fg">
+                        <Star size={12} fill="currentColor" className="text-accent" />
+                        {p.rating}
+                      </span>
+                    )}
+                    {p.priceRange > 0 && <span>{priceLabel(p.priceRange)}</span>}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  className={cn(btn(ui.btnOutline), ui.btnSm, 'shrink-0')}
+                  onClick={() => addToPlan(p.id)}
+                  aria-label={`Add ${p.name} to your plan`}
+                >
+                  <Plus size={15} />
+                  Add
+                </button>
+              </article>
             ))}
           </div>
         )}

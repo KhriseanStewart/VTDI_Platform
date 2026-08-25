@@ -28,7 +28,7 @@ export default function Logo({
         alt=""
         width={44}
         height={44}
-        className={cn(markSize, 'rounded-[0.65rem] object-contain')}
+        className={cn(markSize, 'rounded-xl object-contain')}
       />
       {showWordmark && (
         <span className={cn(ui.logoText, wordSize, light && 'text-white')}>

@@ -13,6 +13,9 @@ Updated: **19 August 2026**
 | [`002_events_schedule.sql`](./002_events_schedule.sql) | Event `starts_at` / `ends_at` / recurring columns |
 | [`003_place_reviews.sql`](./003_place_reviews.sql) | `place_reviews` table + review_count trigger |
 | [`004_shared_plans.sql`](./004_shared_plans.sql) | Public share links for outing plans |
+| [`005_post_moderation.sql`](./005_post_moderation.sql) | Post `status` + authenticated photo submissions |
+| [`006_event_chat.sql`](./006_event_chat.sql) | Per-user event RSVPs + RSVP-gated realtime chat |
+| [`007_catalog_created_by.sql`](./007_catalog_created_by.sql) | `created_by` on places and events (admin dashboard) |
 
 **Or** paste [`full_setup.sql`](./full_setup.sql) for schema + legacy sample rows + migrations 002/003 appended.
 
@@ -100,6 +103,8 @@ bun scripts/seed_jamaica_events.mjs
 | `post_comments` | Comments on posts |
 | `favorites` | User ↔ place saves |
 | `plan_stops` | Ordered outing plan stops |
+| `event_rsvps` | User ↔ event RSVP (`going` \| `interested`) |
+| `event_messages` | Event chat, readable only by RSVPed users |
 
 ## 7. Review model notes
 
@@ -107,6 +112,22 @@ bun scripts/seed_jamaica_events.mjs
 - Public can read all reviews; authenticated users may insert **OutYah** reviews only
 - Venue UI badges show **via Google** / **via OutYah**, etc.
 - Instagram has no public venue-review API — IG remains posts/media only
-- No invented RSVP, like, or attendee counts on events
+- No invented RSVP, like, or attendee counts on events. Attendee numbers on the event
+  page are counted from real `event_rsvps` rows. The legacy `events.going` /
+  `events.interested` columns are seeded to `0` and are no longer read there.
+
+## 8. Event chat access rule
+
+`event_messages` is gated in RLS, not in the UI:
+
+- **Read** requires `public.has_rsvp(event_id)` (or admin) — a user who has not RSVPed
+  cannot select the rows even with the anon key
+- **Insert** requires `user_id = auth.uid()` *and* an RSVP for that event
+- **Update** has no policy at all, so message history cannot be rewritten
+- **Delete** is limited to the message author or an admin
+- `author` / `avatar` are stamped by the `event_messages_set_author` trigger, so a display
+  name cannot be spoofed by a hand-rolled insert
+- Realtime: `event_messages` is added to the `supabase_realtime` publication, and Postgres
+  Changes applies the same select policy per subscriber
 
 Never commit the service role key. The anon key is safe for the browser when RLS is enabled.

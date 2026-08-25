@@ -1,10 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './AuthContext'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { clampPartySize } from '../lib/costs'
 
 const AppContext = createContext(null)
 const GUEST_FAV_KEY = 'outyah_favorites'
 const GUEST_PLAN_KEY = 'outyah_plan'
+const PARTY_SIZE_KEY = 'outyah_party_size'
+
+/** Most outings aren't solo, so the group total is useful immediately. */
+const DEFAULT_PARTY_SIZE = 2
 
 function readLocal(key) {
   try {
@@ -19,10 +24,20 @@ function writeLocal(key, value) {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
+function readPartySize() {
+  try {
+    const raw = localStorage.getItem(PARTY_SIZE_KEY)
+    return raw ? clampPartySize(JSON.parse(raw)) : DEFAULT_PARTY_SIZE
+  } catch {
+    return DEFAULT_PARTY_SIZE
+  }
+}
+
 export function AppProvider({ children }) {
   const { user } = useAuth()
   const [favorites, setFavorites] = useState(() => readLocal(GUEST_FAV_KEY))
   const [plan, setPlan] = useState(() => readLocal(GUEST_PLAN_KEY))
+  const [partySize, setPartySizeState] = useState(readPartySize)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -65,6 +80,11 @@ export function AppProvider({ children }) {
     writeLocal(GUEST_PLAN_KEY, plan)
   }, [plan, user, ready])
 
+  // Party size has no server table, so it persists locally for everyone.
+  useEffect(() => {
+    writeLocal(PARTY_SIZE_KEY, partySize)
+  }, [partySize])
+
   const value = useMemo(() => {
     async function syncFavorite(id, nextHas) {
       if (!isSupabaseConfigured || !user) return
@@ -92,6 +112,8 @@ export function AppProvider({ children }) {
       favorites,
       plan,
       ready,
+      partySize,
+      setPartySize: (value) => setPartySizeState(clampPartySize(value)),
       isFavorite: (id) => favorites.includes(id),
       toggleFavorite: (id) => {
         setFavorites((prev) => {
@@ -163,7 +185,7 @@ export function AppProvider({ children }) {
         syncPlan(next)
       },
     }
-  }, [favorites, plan, ready, user])
+  }, [favorites, plan, ready, partySize, user])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

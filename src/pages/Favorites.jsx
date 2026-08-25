@@ -5,7 +5,7 @@ import EmptyState from '../components/EmptyState'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
-import { btn, ui } from '../lib/ui'
+import { btn, cn, ui } from '../lib/ui'
 
 export default function Favorites() {
   const { favorites } = useApp()
@@ -18,10 +18,15 @@ export default function Favorites() {
       <header>
         <p className={ui.eyebrow}>Saved for later</p>
         <h1 className={ui.display}>Favorites</h1>
+        <p className={cn(ui.lede, 'mt-2')}>
+          {list.length > 0
+            ? `${list.length} place${list.length === 1 ? '' : 's'} on your shortlist.`
+            : 'Places you heart show up here, ready to drop into a plan.'}
+        </p>
       </header>
 
       {!user && (
-        <p className={ui.igSourceNote}>
+        <p className={ui.note}>
           Signed out — favorites stay on this device.{' '}
           <Link to="/auth?next=/favorites" className={ui.textLink}>
             Sign in
@@ -31,7 +36,11 @@ export default function Favorites() {
       )}
 
       {loading ? (
-        <p className={ui.muted}>Loading…</p>
+        <div className={ui.placeGrid} aria-busy="true">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton aspect-9/16 rounded-2xl" />
+          ))}
+        </div>
       ) : list.length === 0 ? (
         <EmptyState
           icon={Heart}

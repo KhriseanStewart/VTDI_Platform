@@ -63,19 +63,24 @@ export default function VenuePhotoSubmit({ placeId, placeName }) {
 
   return (
     <form onSubmit={onSubmit} className={cn(ui.cardPanel, ui.stack)}>
-      <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
-        <Camera size={16} /> Add a community photo
-      </p>
-      <p className={cn(ui.muted, 'text-sm')}>
-        Optional — this venue is already live. New photos only appear in the feed after admin
-        review.
-      </p>
+      <div>
+        <h3 className={cn(ui.h3, 'inline-flex items-center gap-2')}>
+          <Camera size={17} className="text-primary" /> Add a community photo
+        </h3>
+        <p className={cn(ui.small, 'mt-1.5')}>
+          Optional — this venue is already live. New photos only appear in the feed after admin
+          review.
+        </p>
+      </div>
       <label className={ui.field}>
         <span className={ui.fieldLabel}>Photo</span>
         <input
           type="file"
           accept="image/*"
-          className={ui.fieldControl}
+          className={cn(
+            ui.fieldControl,
+            'cursor-pointer p-2 text-[0.85rem] file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary-soft file:px-3 file:py-1.5 file:font-semibold file:text-primary',
+          )}
           onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
       </label>

@@ -4,14 +4,15 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  MapPin,
   Sparkles,
-  Star,
 } from 'lucide-react'
 import { sortEvents, eventStatus } from '../lib/events'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
 import Logo, { TerobytezLockup } from '../components/Logo'
+import JamaicaPulse from '../components/JamaicaPulse'
+import PlaceCard from '../components/PlaceCard'
+import EventCard from '../components/EventCard'
 import { btn, cn, ui } from '../lib/ui'
 
 const HERO_IMAGE =
@@ -149,35 +150,46 @@ export default function Landing() {
         </div>
       </section>
 
+      {(places.length > 0 || events.length > 0) && (
+        <section className="mx-auto -mt-10 w-full max-w-6xl px-4 sm:-mt-14 sm:px-8">
+          <div className="relative z-10">
+            <JamaicaPulse places={places} events={events} compact />
+          </div>
+        </section>
+      )}
+
       <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8 sm:py-20">
         <div className="mb-8 max-w-xl">
           <p className={ui.eyebrow}>Where to go</p>
-          <h2 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-extrabold">
-            Destinations across the island
-          </h2>
+          <h2 className={ui.display}>Destinations across the island</h2>
           <p className={cn(ui.lede, 'mt-2')}>
             Jump into a parish or vibe — then dig into the full map and feed.
           </p>
         </div>
 
-        <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-3 overflow-x-auto pb-2 rail-scroll">
           {regions.map((r) => (
             <Link
               key={r.label}
               to={`/explore?q=${encodeURIComponent(r.query)}`}
-              className="group relative h-48 w-32 shrink-0 overflow-hidden rounded-[2rem] sm:h-56 sm:w-36"
+              className={cn(
+                'group relative h-56 w-[8.5rem] shrink-0 overflow-hidden rounded-2xl shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-lift)] sm:h-64 sm:w-40',
+                ui.focus,
+              )}
             >
               <img
                 src={r.image}
                 alt=""
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
               />
-              <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+              <span className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.82)_0%,rgba(0,0,0,0.15)_55%)]" />
               <span className="absolute inset-x-0 bottom-0 p-3.5">
-                <span className="block text-sm font-bold text-white">{r.label}</span>
+                <span className="block font-display text-[0.98rem] font-bold text-white">
+                  {r.label}
+                </span>
                 {r.count > 0 && (
-                  <span className="text-[0.72rem] font-semibold text-white/75">
-                    {r.count} places
+                  <span className="text-[0.72rem] font-semibold text-white/70">
+                    {r.count} place{r.count === 1 ? '' : 's'}
                   </span>
                 )}
               </span>
@@ -191,15 +203,13 @@ export default function Landing() {
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
               <p className={ui.eyebrow}>Popular spots</p>
-              <h2 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-extrabold">
-                Places people love
-              </h2>
+              <h2 className={ui.display}>Places people love</h2>
             </div>
-            <div className="flex gap-2">
+            <div className="hidden gap-2 sm:flex">
               <button
                 type="button"
                 aria-label="Scroll left"
-                className={cn(ui.btn, ui.btnOutline, ui.btnSm, 'rounded-full px-2.5')}
+                className={cn(ui.iconBtn, 'rounded-full border border-border bg-card')}
                 onClick={() => scrollPopular(-1)}
               >
                 <ChevronLeft size={18} />
@@ -207,7 +217,7 @@ export default function Landing() {
               <button
                 type="button"
                 aria-label="Scroll right"
-                className={cn(ui.btn, ui.btnOutline, ui.btnSm, 'rounded-full px-2.5')}
+                className={cn(ui.iconBtn, 'rounded-full border border-border bg-card')}
                 onClick={() => scrollPopular(1)}
               >
                 <ChevronRight size={18} />
@@ -216,39 +226,15 @@ export default function Landing() {
           </div>
 
           {loading && popular.length === 0 ? (
-            <p className={ui.muted}>Loading places…</p>
+            <div className="flex gap-3 overflow-hidden" aria-busy="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton aspect-9/16 w-[13.5rem] shrink-0 rounded-2xl" />
+              ))}
+            </div>
           ) : (
-            <div
-              ref={popularRef}
-              className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
+            <div ref={popularRef} className="flex gap-3 overflow-x-auto pb-2 rail-scroll">
               {popular.map((p) => (
-                <Link
-                  key={p.id}
-                  to={`/place/${p.id}`}
-                  className="group w-[min(100%,18rem)] shrink-0 overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img
-                      src={p.image}
-                      alt=""
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold leading-snug">{p.name}</h3>
-                      <span className={ui.rating}>
-                        <Star size={13} fill="currentColor" />
-                        {p.rating}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 flex items-center gap-1 text-[0.82rem] text-muted">
-                      <MapPin size={13} />
-                      {p.neighborhood || p.area}
-                    </p>
-                  </div>
-                </Link>
+                <PlaceCard key={p.id} place={p} compact />
               ))}
               {popular.length === 0 && !loading && (
                 <p className={ui.muted}>Places will show here once the catalog is loaded.</p>
@@ -269,34 +255,15 @@ export default function Landing() {
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
               <p className={ui.eyebrow}>On the calendar</p>
-              <h2 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-extrabold">
-                Coming up on the island
-              </h2>
+              <h2 className={ui.display}>Coming up on the island</h2>
             </div>
             <Link to="/events" className={ui.textLink}>
               See all
             </Link>
           </div>
-          <div className={ui.eventMosaic}>
+          <div className={ui.eventGrid}>
             {upcoming.map((e) => (
-              <Link key={e.id} to={`/events/${e.id}`} className={ui.eventMosaicItem}>
-                <div className={ui.eventMosaicMedia}>
-                  <img
-                    src={e.image}
-                    alt=""
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <div className={ui.eventMosaicBody}>
-                  <p className={ui.eventCardType}>{e.type || 'Event'}</p>
-                  <h3 className="mt-1 font-display text-[1.05rem] font-bold leading-snug">
-                    {e.title}
-                  </h3>
-                  <p className="mt-1.5 text-[0.82rem] text-muted">
-                    {e.date} · {e.area}
-                  </p>
-                </div>
-              </Link>
+              <EventCard key={e.id} event={e} />
             ))}
           </div>
         </section>

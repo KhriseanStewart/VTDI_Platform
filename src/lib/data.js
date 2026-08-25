@@ -28,6 +28,8 @@ export function mapPlace(row) {
     reviews: row.reviews || [],
     slots: row.slots || undefined,
     slotLabel: row.slot_label || undefined,
+    createdBy: row.created_by || null,
+    createdAt: row.created_at || null,
   }
 }
 
@@ -52,6 +54,8 @@ export function mapEvent(row) {
     endsAt: row.ends_at || null,
     recurring: Boolean(row.recurring),
     recurrenceNote: row.recurrence_note || '',
+    createdBy: row.created_by || null,
+    createdAt: row.created_at || null,
   }
 }
 

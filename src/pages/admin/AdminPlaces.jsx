@@ -312,7 +312,7 @@ export default function AdminPlaces() {
             />
           </label>
           <label className={ui.field}>
-            <span className={ui.fieldLabel}>Price range (JMD)</span>
+            <span className={ui.fieldLabel}>Typical spend per person (JMD)</span>
             <input
               className={ui.fieldControl}
               type="number"
@@ -331,6 +331,10 @@ export default function AdminPlaces() {
               onBlur={() => setField('priceRange', normalizePriceRange(form.priceRange))}
               required
             />
+            <span className={ui.costFoot}>
+              What one person usually spends here. Drives the outing cost estimate — leave it
+              accurate and plans stay believable.
+            </span>
           </label>
         </div>
 

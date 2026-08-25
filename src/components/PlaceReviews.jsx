@@ -191,7 +191,7 @@ export default function PlaceReviews({ placeId, placeRating }) {
           </button>
         </form>
       ) : (
-        <p className={ui.igSourceNote}>
+        <p className={ui.note}>
           <Link to={`/auth?next=/place/${placeId}`} className={ui.textLink}>
             Sign in
           </Link>{' '}
@@ -215,7 +215,7 @@ export default function PlaceReviews({ placeId, placeRating }) {
           {filtered.map((r) => (
             <article
               key={r.id}
-              className="flex gap-3 rounded-[0.9rem] border border-border bg-card p-4"
+              className="flex gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
             >
               <img
                 src={

@@ -16,17 +16,19 @@ export default function InstagramPostCard({ post }) {
   return (
     <article className={ui.igCard}>
       <header className={ui.igCardHead}>
-        <img src={post.userAvatar} alt="" className={ui.avatar} />
+        <img src={post.userAvatar} alt="" className={ui.avatarSm} />
         <div className={ui.igCardUser}>
-          <strong>@{post.username}</strong>
+          <strong className="truncate text-[0.88rem]">@{post.username}</strong>
           {place && (
             <Link to={`/place/${place.id}`} className={ui.igPlaceLink}>
               <MapPin size={12} />
-              {place.name}
+              <span className="truncate">{place.name}</span>
             </Link>
           )}
         </div>
-        <span className={ui.muted}>{formatInstagramTime(post.timestamp)}</span>
+        <span className="shrink-0 text-[0.76rem] text-subtle">
+          {formatInstagramTime(post.timestamp)}
+        </span>
       </header>
 
       {place ? (

@@ -1,21 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #faf8f4;
-  --color-fg: #1a241c;
+  --color-bg: #f8f7f4;
+  --color-fg: #16201a;
   --color-card: #ffffff;
-  --color-muted: #6b756e;
-  --color-border: #e8e4dc;
+  --color-muted: #667169;
+  --color-subtle: #8d968f;
+  --color-border: #e6e3db;
+  --color-border-strong: #d5d1c7;
   --color-primary: #1f6b4f;
+  --color-primary-hover: #1a5a43;
   --color-on-primary: #f7faf8;
-  --color-primary-soft: rgb(31 107 79 / 0.12);
+  --color-primary-soft: rgb(31 107 79 / 0.1);
   --color-accent: #e4b84a;
   --color-on-accent: #3a2e0a;
   --color-danger: #c23b3b;
+  --color-danger-soft: rgb(194 59 59 / 0.1);
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-display: "Bricolage Grotesque", Georgia, serif;
   --radius-brand: 1rem;
-  --shadow-soft: 0 1px 2px rgb(26 36 28 / 0.05);
+  --shadow-xs: 0 1px 2px rgb(22 32 26 / 0.04);
+  --shadow-soft: 0 1px 2px rgb(22 32 26 / 0.05);
+  --shadow-card: 0 1px 3px rgb(22 32 26 / 0.06), 0 1px 2px rgb(22 32 26 / 0.04);
+  --shadow-lift: 0 12px 28px -12px rgb(22 32 26 / 0.18), 0 4px 10px -6px rgb(22 32 26 / 0.1);
+  --shadow-panel: 0 24px 48px -24px rgb(22 32 26 / 0.22);
   --animate-empty-float: empty-float 3.6s ease-in-out infinite;
 }
 
@@ -49,6 +57,12 @@
   }
 }
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 @layer utilities {
   .motion-fade-up {
     animation: fade-up 0.85s ease-out both;
@@ -66,9 +80,38 @@
     animation: hero-kenburns 28s ease-in-out infinite alternate;
   }
 
+  /* Hide scrollbars on horizontal rails while keeping keyboard scrolling */
+  .rail-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .rail-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--color-fg) 7%, transparent);
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-card) 60%, transparent),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .motion-fade-up,
-    .motion-kenburns {
+    .motion-kenburns,
+    .skeleton::after {
       animation: none;
     }
   }
@@ -81,8 +124,13 @@
     @apply min-h-full;
   }
 
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply m-0 bg-bg font-sans text-fg antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   a {
@@ -101,6 +149,13 @@
     background: none;
   }
 
+  /* Consistent, visible keyboard focus across the app */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
   img {
     @apply block max-w-full;
   }
@@ -113,5 +168,9 @@
 
   p {
     @apply m-0;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 22%, transparent);
   }
 }

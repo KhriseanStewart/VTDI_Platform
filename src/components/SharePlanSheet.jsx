@@ -87,7 +87,7 @@ export default function SharePlanSheet({ open, onClose, placeIds, planTitle }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-md animate-[fade-up_0.25s_ease-out] rounded-t-[1.35rem] border border-border bg-card p-5 shadow-lg sm:rounded-[1.35rem]"
+        className="relative z-10 w-full max-w-md animate-[fade-up_0.25s_ease-out] rounded-t-3xl border border-border bg-card p-5 shadow-[var(--shadow-panel)] sm:rounded-3xl"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>

@@ -41,23 +41,18 @@ export default function Layout() {
     profile?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || 'guest')}`
 
+  const navLinkClass = ({ isActive }) => cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
+
   return (
     <div className={ui.shell}>
       <aside className={ui.sidebar}>
         <Logo />
-        <nav className={ui.sidebarNav}>
+        <nav className={ui.sidebarNav} aria-label="Main">
           {NAV.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
-              }
-            >
+            <NavLink key={to} to={to} end={end} className={navLinkClass}>
               {({ isActive }) => (
                 <>
-                  <Icon size={19} />
+                  <Icon size={19} strokeWidth={isActive ? 2.4 : 2} />
                   {label}
                   {to === '/plan' && plan.length > 0 && (
                     <span className={cn(ui.countPill, isActive && ui.countPillOnActive)}>
@@ -68,15 +63,10 @@ export default function Layout() {
               )}
             </NavLink>
           ))}
-          <NavLink
-            to="/favorites"
-            className={({ isActive }) =>
-              cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
-            }
-          >
+          <NavLink to="/favorites" className={navLinkClass}>
             {({ isActive }) => (
               <>
-                <Heart size={19} />
+                <Heart size={19} strokeWidth={isActive ? 2.4 : 2} />
                 Favorites
                 {favorites.length > 0 && (
                   <span className={cn(ui.countPill, isActive && ui.countPillOnActive)}>
@@ -89,20 +79,15 @@ export default function Layout() {
 
           {isAdmin && (
             <>
-              <p className="mt-4 px-3 text-[0.7rem] font-bold uppercase tracking-wider text-muted">
-                Admin
-              </p>
+              <p className={ui.navGroupLabel}>Admin</p>
               {ADMIN_NAV.map(({ to, label, icon: Icon, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  className={({ isActive }) =>
-                    cn(ui.sidebarLink, isActive && ui.sidebarLinkActive)
-                  }
-                >
-                  <Icon size={19} />
-                  {label}
+                <NavLink key={to} to={to} end={end} className={navLinkClass}>
+                  {({ isActive }) => (
+                    <>
+                      <Icon size={19} strokeWidth={isActive ? 2.4 : 2} />
+                      {label}
+                    </>
+                  )}
                 </NavLink>
               ))}
             </>
@@ -110,10 +95,10 @@ export default function Layout() {
         </nav>
 
         <Link to={user ? '/profile' : '/auth?next=/profile'} className={ui.sidebarUser}>
-          <img src={avatar} alt="" className={ui.avatar} />
-          <span>
-            <strong className="block">{displayName}</strong>
-            <small className="block text-[0.75rem] text-muted">
+          <img src={avatar} alt="" className={ui.avatarSm} />
+          <span className="min-w-0">
+            <strong className="block truncate text-[0.88rem]">{displayName}</strong>
+            <small className="block truncate text-[0.75rem] text-subtle">
               {user ? handle : 'Sign in'}
             </small>
           </span>
@@ -121,22 +106,27 @@ export default function Layout() {
       </aside>
 
       <div className={ui.shellMain}>
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-bg/85 px-4 py-2.5 backdrop-blur-xl lg:hidden">
+          <Logo size="sm" />
+          <Link
+            to={user ? '/profile' : '/auth?next=/profile'}
+            className={cn('rounded-full', ui.focus)}
+            aria-label={user ? 'Your profile' : 'Sign in'}
+          >
+            <img src={avatar} alt="" className="h-8 w-8 rounded-full bg-border object-cover" />
+          </Link>
+        </header>
+
         <main className={ui.page}>
           {isAdmin && onAdmin && (
-            <nav
-              className="mb-4 flex gap-1 overflow-x-auto pb-1 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              aria-label="Admin"
-            >
+            <nav className="mb-5 flex gap-1.5 overflow-x-auto pb-1 rail-scroll lg:hidden" aria-label="Admin">
               {ADMIN_NAV.map(({ to, label, icon: Icon, end }) => (
                 <NavLink
                   key={to}
                   to={to}
                   end={end}
                   className={({ isActive }) =>
-                    cn(
-                      'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[0.8rem] font-semibold text-fg',
-                      isActive && 'border-primary bg-primary text-on-primary',
-                    )
+                    cn(ui.chip, ui.btnSm, 'gap-1.5', isActive && ui.chipActive)
                   }
                 >
                   <Icon size={14} />
@@ -149,20 +139,22 @@ export default function Layout() {
         </main>
       </div>
 
-      <nav className={ui.bottomNav}>
+      <nav className={ui.bottomNav} aria-label="Main">
         {NAV.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
-            className={({ isActive }) =>
-              cn(ui.bottomLink, isActive && ui.bottomLinkActive)
-            }
+            className={({ isActive }) => cn(ui.bottomLink, isActive && ui.bottomLinkActive)}
           >
-            <Icon size={22} strokeWidth={2} />
-            {label}
-            {to === '/plan' && plan.length > 0 && (
-              <span className={ui.badgeDot}>{plan.length}</span>
+            {({ isActive }) => (
+              <>
+                <Icon size={21} strokeWidth={isActive ? 2.5 : 2} />
+                {label}
+                {to === '/plan' && plan.length > 0 && (
+                  <span className={ui.badgeDot}>{plan.length}</span>
+                )}
+              </>
             )}
           </NavLink>
         ))}

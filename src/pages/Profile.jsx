@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { ChevronRight, LogOut } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
-import { btn, ui } from '../lib/ui'
+import { btn, cn, ui } from '../lib/ui'
 
 export default function Profile() {
   const { favorites, plan } = useApp()
@@ -14,16 +15,19 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className={ui.stackLg}>
+      <div className={cn(ui.stack, 'mx-auto w-full max-w-md gap-5 py-6 text-center sm:py-12')}>
         <header>
-          <h1 className={ui.display}>Your profile</h1>
-          <p className={ui.lede}>Sign in to sync favorites and outing plans across devices.</p>
+          <p className={ui.eyebrow}>Profile</p>
+          <h1 className={ui.display}>Your OutYah account</h1>
+          <p className={cn(ui.lede, 'mx-auto mt-2')}>
+            Sign in to sync favorites and outing plans across devices.
+          </p>
         </header>
-        <Link to="/auth?next=/profile" className={btn(ui.btnPrimary)}>
+        <Link to="/auth?next=/profile" className={cn(btn(ui.btnPrimary), ui.btnLg, 'mx-auto')}>
           Sign in
         </Link>
         {!configured && (
-          <p className={ui.igSourceNote}>Supabase is not configured in this environment.</p>
+          <p className={ui.note}>Supabase is not configured in this environment.</p>
         )}
       </div>
     )
@@ -35,63 +39,69 @@ export default function Profile() {
     profile?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.email || 'user')}`
 
-  const menuItem =
-    'block w-full cursor-pointer border-none border-b border-border bg-transparent px-4 py-[0.95rem] text-left font-semibold text-fg last:border-b-0 hover:bg-primary-soft hover:text-primary'
+  const menuItem = cn(
+    'flex w-full cursor-pointer items-center justify-between gap-3 border-none bg-transparent px-4 py-3.5 text-left text-[0.95rem] font-semibold text-fg hover:bg-bg',
+    'transition-colors duration-150',
+  )
+
+  const MENU = [
+    { to: '/favorites', label: 'Saved places', meta: favorites.length || null },
+    { to: '/plan', label: 'Current outing', meta: plan.length || null },
+    { to: '/events', label: 'Events near you' },
+    ...(isAdmin ? [{ to: '/admin', label: 'Admin portal' }] : []),
+  ]
 
   return (
-    <div className={ui.stackLg}>
-      <header className="flex items-start gap-4">
+    <div className={cn(ui.stackLg, 'mx-auto w-full max-w-2xl')}>
+      <header className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
         <img src={avatar} alt="" className={ui.avatarXl} />
-        <div>
+        <div className="min-w-0">
           <h1 className={ui.display}>{name}</h1>
-          <p className={ui.muted}>{handle}</p>
-          <p className={ui.lede}>{profile?.bio || user.email}</p>
+          <p className="mt-1 text-[0.92rem] font-semibold text-primary">{handle}</p>
+          <p className={cn(ui.lede, 'mt-2 text-[0.92rem]')}>{profile?.bio || user.email}</p>
         </div>
       </header>
 
-      <div className="grid grid-cols-3 gap-[0.65rem] min-[720px]:grid-cols-5">
-        <div className="rounded-2xl border border-border bg-card p-[0.9rem] text-center">
-          <strong className="font-display block text-xl font-bold">{favorites.length}</strong>
-          <span className="text-[0.75rem] text-muted">Favorites</span>
+      <div className={ui.statGrid}>
+        <div className={ui.stat}>
+          <strong className={ui.statValue}>{favorites.length}</strong>
+          <span className={ui.statLabel}>Favorites</span>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-[0.9rem] text-center">
-          <strong className="font-display block text-xl font-bold">{plan.length}</strong>
-          <span className="text-[0.75rem] text-muted">In plan</span>
+        <div className={ui.stat}>
+          <strong className={ui.statValue}>{plan.length}</strong>
+          <span className={ui.statLabel}>In plan</span>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-[0.9rem] text-center">
-          <strong className="font-display block text-xl font-bold">
-            {isAdmin ? 'Admin' : 'Member'}
-          </strong>
-          <span className="text-[0.75rem] text-muted">Role</span>
+        <div className={ui.stat}>
+          <strong className={ui.statValue}>{isAdmin ? 'Admin' : 'Member'}</strong>
+          <span className={ui.statLabel}>Role</span>
         </div>
       </div>
 
-      <nav className="grid overflow-hidden rounded-2xl border border-border bg-card">
-        <Link to="/favorites" className={menuItem}>
-          Saved places
-        </Link>
-        <Link to="/plan" className={menuItem}>
-          Current outing
-        </Link>
-        <Link to="/events" className={menuItem}>
-          Events near you
-        </Link>
-        {isAdmin && (
-          <Link to="/admin" className={menuItem}>
-            Admin portal
+      <nav className={ui.listGroup}>
+        {MENU.map((item) => (
+          <Link key={item.to} to={item.to} className={menuItem}>
+            {item.label}
+            <span className="flex items-center gap-2 text-muted">
+              {item.meta != null && (
+                <span className="text-[0.82rem] font-bold tabular-nums">{item.meta}</span>
+              )}
+              <ChevronRight size={16} />
+            </span>
           </Link>
-        )}
-        <button
-          type="button"
-          className={menuItem}
-          onClick={async () => {
-            await signOut()
-            navigate('/')
-          }}
-        >
-          Log out
-        </button>
+        ))}
       </nav>
+
+      <button
+        type="button"
+        className={cn(btn(ui.btnOutline), ui.btnBlock, 'text-danger hover:bg-danger-soft')}
+        onClick={async () => {
+          await signOut()
+          navigate('/')
+        }}
+      >
+        <LogOut size={16} />
+        Log out
+      </button>
     </div>
   )
 }

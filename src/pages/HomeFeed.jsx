@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { sortEvents, eventStatus } from '../lib/events'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   List,
@@ -11,20 +10,34 @@ import {
   MapPin,
   Search,
   SlidersHorizontal,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react'
 import { AREAS, CATEGORY_LABELS, priceLabel } from '../data/outyahData'
 import CategoryChips from '../components/CategoryChips'
-import EventCard from '../components/EventCard'
-import PlaceCard from '../components/PlaceCard'
+import JamaicaPulse from '../components/JamaicaPulse'
+import ShelfRow from '../components/ShelfRow'
+import PlaceTile from '../components/PlaceTile'
+import EventTile from '../components/EventTile'
 import InstagramPostCard from '../components/InstagramPostCard'
 import EmptyState from '../components/EmptyState'
 import { PlacesMap } from '../components/maps/GoogleMaps'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
+import { useNow } from '../hooks/usePulse'
+import { eventTiming, jamaicaClock, placeOpenState } from '../lib/pulse'
 import { cn, ui, btn } from '../lib/ui'
+
+/** Categories worth their own row, in the order they should appear. */
+const SHELF_CATEGORIES = ['beach', 'restaurant', 'attraction', 'bar', 'cafe']
+const CATEGORY_SUBTITLE = {
+  beach: 'Sand, cliffs, and swim spots',
+  restaurant: 'From jerk yards to fine dining',
+  attraction: 'Waterfalls, history, and day trips',
+  bar: 'Rum bars and late nights',
+  cafe: 'Coffee, patties, and slow mornings',
+}
+
+const WEEKEND_DAYS = new Set(['Fri', 'Sat', 'Sun'])
 
 export default function HomeFeed() {
   const [view, setView] = useState('feed')
@@ -37,61 +50,104 @@ export default function HomeFeed() {
   const { isFavorite, toggleFavorite } = useApp()
   const { profile, user, isAdmin } = useAuth()
 
+  const now = useNow()
+
   const greetingName =
     profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'friend'
 
   useEffect(() => {
     const fromUrl = searchParams.get('q')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (fromUrl) setQ(fromUrl)
   }, [searchParams])
 
-  const filteredPlaces = useMemo(() => {
-    let list = cat === 'all' ? places : places.filter((p) => p.category === cat)
-    if (area !== 'all') {
-      list = list.filter((p) => p.area === area)
-    }
-    if (q.trim()) {
-      const s = q.toLowerCase()
-      list = list.filter(
+  // What the visitor's chips and search box actually produce.
+  const { filteredPlaces, filteredPosts } = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    const placeById = new Map(places.map((p) => [p.id, p]))
+
+    let matchedPlaces = places.filter(
+      (p) => (cat === 'all' || p.category === cat) && (area === 'all' || p.area === area),
+    )
+    if (needle) {
+      matchedPlaces = matchedPlaces.filter(
         (p) =>
-          p.name?.toLowerCase().includes(s) ||
-          p.area?.toLowerCase().includes(s) ||
-          p.neighborhood?.toLowerCase().includes(s) ||
-          (p.tags || []).some((t) => t.toLowerCase().includes(s)),
+          p.name?.toLowerCase().includes(needle) ||
+          p.area?.toLowerCase().includes(needle) ||
+          p.neighborhood?.toLowerCase().includes(needle) ||
+          (p.tags || []).some((t) => t.toLowerCase().includes(needle)),
       )
     }
-    return list
-  }, [places, cat, area, q])
 
-  const filteredPosts = useMemo(() => {
-    let list = posts
+    let matchedPosts = posts
     if (cat !== 'all') {
-      list = list.filter((post) => {
-        const place = places.find((p) => p.id === post.placeId)
-        return place?.category === cat
-      })
+      matchedPosts = matchedPosts.filter(
+        (post) => placeById.get(post.placeId)?.category === cat,
+      )
     }
-    if (q.trim()) {
-      const s = q.toLowerCase()
-      list = list.filter((post) => {
-        const place = places.find((p) => p.id === post.placeId)
+    if (needle) {
+      matchedPosts = matchedPosts.filter((post) => {
+        const place = placeById.get(post.placeId)
         return (
-          post.caption?.toLowerCase().includes(s) ||
-          post.username?.toLowerCase().includes(s) ||
-          place?.name.toLowerCase().includes(s) ||
-          place?.area.toLowerCase().includes(s) ||
-          place?.neighborhood.toLowerCase().includes(s)
+          post.caption?.toLowerCase().includes(needle) ||
+          post.username?.toLowerCase().includes(needle) ||
+          place?.name?.toLowerCase().includes(needle) ||
+          place?.area?.toLowerCase().includes(needle) ||
+          place?.neighborhood?.toLowerCase().includes(needle)
         )
       })
     }
-    return list
-  }, [posts, places, cat, q])
 
-  const popularTrips = useMemo(() => {
-    return sortEvents(events)
-      .filter((e) => eventStatus(e) !== 'past')
-      .slice(0, 6)
-  }, [events])
+    return { filteredPlaces: matchedPlaces, filteredPosts: matchedPosts }
+  }, [places, posts, cat, area, q])
+
+  // Everything that moves with the clock, recomputed together on each tick.
+  // Shelves are scoped to the parish only, so they stay browsable while the
+  // chips and search box drive the results grid below them.
+  const { clock, openStates, timings, tonight, weekend, openNow, topRated, categoryShelves } =
+    useMemo(() => {
+      const clock = jamaicaClock(now)
+      const openStates = new Map(places.map((p) => [p.id, placeOpenState(p, clock)]))
+      const timings = new Map(events.map((e) => [e.id, eventTiming(e, now, clock)]))
+
+      const scopedPlaces = area === 'all' ? places : places.filter((p) => p.area === area)
+      const scopedEvents = area === 'all' ? events : events.filter((e) => e.area === area)
+      const bySoonest = (a, b) =>
+        (timings.get(a.id)?.startsInMin ?? 0) - (timings.get(b.id)?.startsInMin ?? 0)
+
+      return {
+        clock,
+        openStates,
+        timings,
+        tonight: scopedEvents
+          .filter((e) => ['live', 'soon', 'today'].includes(timings.get(e.id)?.status))
+          .sort(bySoonest),
+        weekend: scopedEvents
+          .filter((e) => {
+            const t = timings.get(e.id)
+            if (!t?.start || t.status === 'past') return false
+            if (t.startsInMin != null && t.startsInMin > 60 * 24 * 8) return false
+            return WEEKEND_DAYS.has(jamaicaClock(t.start).day)
+          })
+          .sort(bySoonest),
+        openNow: scopedPlaces
+          .filter((p) => openStates.get(p.id)?.open)
+          .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0)),
+        topRated: scopedPlaces
+          .filter((p) => Number(p.rating) > 0)
+          .sort(
+            (a, b) =>
+              Number(b.rating) - Number(a.rating) || (b.reviewCount || 0) - (a.reviewCount || 0),
+          )
+          .slice(0, 12),
+        categoryShelves: SHELF_CATEGORIES.map((key) => ({
+          key,
+          label: CATEGORY_LABELS[key] || key,
+          subtitle: CATEGORY_SUBTITLE[key],
+          items: scopedPlaces.filter((p) => p.category === key),
+        })).filter((shelf) => shelf.items.length >= 3),
+      }
+    }, [places, events, area, now])
 
   const parishOptions = useMemo(() => {
     const present = new Set(places.map((p) => p.area).filter(Boolean))
@@ -101,20 +157,27 @@ export default function HomeFeed() {
   const mapPlaces = filteredPlaces
   const activeId = selected || mapPlaces[0]?.id
   const active = places.find((p) => p.id === activeId) || mapPlaces[0]
-  const heading = cat === 'all' ? 'Results' : CATEGORY_LABELS[cat]
+  const heading = cat === 'all' ? 'All places' : CATEGORY_LABELS[cat]
+  const scopeLabel = area === 'all' ? 'across Jamaica' : `in ${area}`
 
-  const scrollStrip = (id, dir) => {
-    document.getElementById(id)?.scrollBy({ left: dir * 280, behavior: 'smooth' })
+  // Filters active means the visitor is hunting for something specific — show
+  // results directly instead of curated rows.
+  const isFiltering = cat !== 'all' || q.trim().length > 0
+
+  const clearFilters = () => {
+    setCat('all')
+    setArea('all')
+    setQ('')
   }
 
   return (
     <div className={ui.stackLg}>
       <header>
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className={ui.eyebrow}>Wah gwaan, {greetingName}</p>
+            <p className={ui.kicker}>Wah gwaan, {greetingName}</p>
             <h1 className={ui.display}>Find a trip</h1>
-            <p className={cn(ui.muted, 'mt-1 max-w-md text-sm')}>
+            <p className={cn(ui.lede, 'mt-2 max-w-md text-[0.92rem]')}>
               Search the island by place, parish, or vibe — then open the map when you&apos;re ready
               to move.
             </p>
@@ -197,48 +260,8 @@ export default function HomeFeed() {
         />
       )}
 
-      {!error && view === 'feed' && popularTrips.length > 0 && (
-        <section>
-          <div className={ui.sectionHead}>
-            <h2 className={ui.sectionHeadTitle}>Popular trips</h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label="Scroll popular left"
-                className={cn(ui.btn, ui.btnOutline, ui.btnSm, 'rounded-full px-2')}
-                onClick={() => scrollStrip('popular-strip', -1)}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                aria-label="Scroll popular right"
-                className={cn(ui.btn, ui.btnOutline, ui.btnSm, 'rounded-full px-2')}
-                onClick={() => scrollStrip('popular-strip', 1)}
-              >
-                <ChevronRight size={16} />
-              </button>
-              <Link to="/events" className={ui.textLink}>
-                See all
-              </Link>
-            </div>
-          </div>
-          <div id="popular-strip" className={ui.popularStrip}>
-            <div className={ui.popularMosaic}>
-              {popularTrips.map((e) => (
-                <Link key={e.id} to={`/events/${e.id}`} className={ui.popularCard}>
-                  <img src={e.image} alt="" className={ui.popularCardImg} />
-                  <span className="min-w-0">
-                    <strong className="block truncate text-[0.9rem]">{e.title}</strong>
-                    <span className="mt-0.5 block text-[0.75rem] text-muted">
-                      {e.date} · {e.area}
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
+      {!error && !loading && (places.length > 0 || events.length > 0) && (
+        <JamaicaPulse places={places} events={events} area={area} />
       )}
 
       {!error && (
@@ -249,55 +272,128 @@ export default function HomeFeed() {
 
       {!error && view === 'feed' ? (
         <>
-          <section className={ui.stack}>
-            <div className={ui.sectionHead}>
-              <h2 className={ui.sectionHeadTitle}>{heading}</h2>
-              <span className={cn(ui.mutedCount, 'inline-flex items-center gap-1.5')}>
-                <SlidersHorizontal size={14} />
-                {loading ? 'Loading…' : `${filteredPlaces.length} places`}
-              </span>
+          {loading ? (
+            <div className={ui.tileGrid} aria-busy="true">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i}>
+                  <div className="skeleton aspect-square rounded-xl" />
+                  <div className="skeleton mt-2.5 h-3.5 w-3/4 rounded" />
+                  <div className="skeleton mt-1.5 h-3 w-1/2 rounded" />
+                </div>
+              ))}
             </div>
-
-            {loading ? (
-              <p className={ui.muted}>Loading places…</p>
-            ) : filteredPlaces.length === 0 ? (
-              <EmptyState
-                icon={Compass}
-                eyebrow="Places"
-                title={places.length === 0 ? 'No places yet' : 'No matches'}
-                description={
-                  places.length === 0
-                    ? 'Add venues in admin and their cover photos will show up here.'
-                    : 'Nothing matches that search or filter. Clear filters and try again.'
-                }
-                action={
-                  places.length === 0 && isAdmin ? (
-                    <Link to="/admin/places" className={btn(ui.btnPrimary)}>
-                      Add a place
-                    </Link>
-                  ) : places.length > 0 ? (
-                    <button
-                      type="button"
-                      className={btn(ui.btnOutline)}
-                      onClick={() => {
-                        setCat('all')
-                        setArea('all')
-                        setQ('')
-                      }}
+          ) : (
+            <>
+              {!isFiltering && (
+                <>
+                  {tonight.length >= 2 && (
+                    <ShelfRow
+                      title={`Happening tonight ${scopeLabel}`}
+                      subtitle={`${clock.dayLong} — on now and starting soon`}
+                      to="/events"
                     >
-                      Clear filters
-                    </button>
-                  ) : null
-                }
-              />
-            ) : (
-              <div className={ui.placeGrid}>
-                {filteredPlaces.map((p) => (
-                  <PlaceCard key={p.id} place={p} />
-                ))}
-              </div>
-            )}
-          </section>
+                      {tonight.map((e) => (
+                        <EventTile key={e.id} event={e} timing={timings.get(e.id)} />
+                      ))}
+                    </ShelfRow>
+                  )}
+
+                  {openNow.length >= 3 && (
+                    <ShelfRow
+                      title="Open right now"
+                      subtitle={`Doors open as of ${clock.clock}`}
+                    >
+                      {openNow.slice(0, 14).map((p) => (
+                        <PlaceTile key={p.id} place={p} openState={openStates.get(p.id)} />
+                      ))}
+                    </ShelfRow>
+                  )}
+
+                  {weekend.length >= 2 && (
+                    <ShelfRow
+                      title="This weekend on the island"
+                      subtitle="Friday through Sunday"
+                      to="/events"
+                    >
+                      {weekend.map((e) => (
+                        <EventTile key={e.id} event={e} timing={timings.get(e.id)} />
+                      ))}
+                    </ShelfRow>
+                  )}
+
+                  {topRated.length >= 3 && (
+                    <ShelfRow
+                      title={`Highest rated ${scopeLabel}`}
+                      subtitle="Ranked by visitor reviews"
+                    >
+                      {topRated.map((p) => (
+                        <PlaceTile key={p.id} place={p} openState={openStates.get(p.id)} />
+                      ))}
+                    </ShelfRow>
+                  )}
+
+                  {categoryShelves.map((shelf) => (
+                    <ShelfRow key={shelf.key} title={shelf.label} subtitle={shelf.subtitle}>
+                      {shelf.items.map((p) => (
+                        <PlaceTile key={p.id} place={p} openState={openStates.get(p.id)} />
+                      ))}
+                    </ShelfRow>
+                  ))}
+                </>
+              )}
+
+              <section className={ui.stack}>
+                <div className={ui.sectionHead}>
+                  <h2 className={ui.sectionHeadTitle}>
+                    {isFiltering ? heading : `All places ${scopeLabel}`}
+                  </h2>
+                  <span className={ui.mutedCount}>
+                    <SlidersHorizontal size={14} />
+                    {filteredPlaces.length} place{filteredPlaces.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                {filteredPlaces.length === 0 ? (
+                  <EmptyState
+                    icon={Compass}
+                    eyebrow="Places"
+                    title={places.length === 0 ? 'No places yet' : 'No matches'}
+                    description={
+                      places.length === 0
+                        ? 'Add venues in admin and their cover photos will show up here.'
+                        : 'Nothing matches that search or filter. Clear filters and try again.'
+                    }
+                    action={
+                      places.length === 0 && isAdmin ? (
+                        <Link to="/admin/places" className={btn(ui.btnPrimary)}>
+                          Add a place
+                        </Link>
+                      ) : places.length > 0 ? (
+                        <button
+                          type="button"
+                          className={btn(ui.btnOutline)}
+                          onClick={clearFilters}
+                        >
+                          Clear filters
+                        </button>
+                      ) : null
+                    }
+                  />
+                ) : (
+                  <div className={ui.tileGrid}>
+                    {filteredPlaces.map((p) => (
+                      <PlaceTile
+                        key={p.id}
+                        place={p}
+                        openState={openStates.get(p.id)}
+                        wide
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
+          )}
 
           {filteredPosts.length > 0 && (
             <section className={ui.stack}>
@@ -319,7 +415,7 @@ export default function HomeFeed() {
       ) : !error ? (
         <section className={ui.stack}>
           {loading ? (
-            <p className={ui.muted}>Loading map…</p>
+            <div className="skeleton h-[58vh] min-h-[440px] rounded-2xl" aria-busy="true" />
           ) : mapPlaces.length === 0 ? (
             <EmptyState
               icon={Compass}
@@ -346,7 +442,7 @@ export default function HomeFeed() {
                 </div>
 
                 {active && (
-                  <div className="flex items-center gap-3 border-t border-border p-[0.85rem]">
+                  <div className="flex items-center gap-3 border-t border-border p-3">
                     <Link
                       to={`/place/${active.id}`}
                       className="flex min-w-0 flex-1 items-center gap-3"
@@ -354,13 +450,13 @@ export default function HomeFeed() {
                       <img
                         src={active.image}
                         alt=""
-                        className="h-14 w-14 rounded-[0.85rem] object-cover"
+                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
                       />
-                      <div>
-                        <strong className="block text-[0.92rem]">{active.name}</strong>
+                      <div className="min-w-0">
+                        <strong className="block truncate text-[0.92rem]">{active.name}</strong>
                         <span className="inline-flex items-center gap-1 text-[0.78rem] text-muted">
-                          <Star size={12} fill="currentColor" /> {active.rating} ·{' '}
-                          {priceLabel(active.priceRange)} · {active.area}
+                          <Star size={12} fill="currentColor" className="text-accent" />{' '}
+                          {active.rating} · {priceLabel(active.priceRange)} · {active.area}
                         </span>
                       </div>
                     </Link>
@@ -379,16 +475,18 @@ export default function HomeFeed() {
                 )}
               </div>
 
-              <div className="flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className={ui.rail}>
                 {mapPlaces.map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     className={cn(
-                      'flex shrink-0 cursor-pointer items-center gap-[0.55rem] rounded-full border border-border bg-card py-1.5 pl-1.5 pr-[0.7rem] text-left text-[0.82rem] font-semibold',
+                      ui.chip,
+                      'gap-2.5 py-1.5 pl-1.5 pr-3',
                       activeId === p.id && 'border-primary bg-primary-soft text-primary',
                     )}
                     onClick={() => setSelected(p.id)}
+                    aria-pressed={activeId === p.id}
                   >
                     <img src={p.image} alt="" className="h-8 w-8 rounded-full object-cover" />
                     <span>{p.name}</span>
@@ -399,24 +497,6 @@ export default function HomeFeed() {
           )}
         </section>
       ) : null}
-
-      {!error && view === 'feed' && events.length > 0 && popularTrips.length === 0 && (
-        <section>
-          <div className={ui.sectionHead}>
-            <h2 className={ui.sectionHeadTitle}>Coming up on the island</h2>
-            <Link to="/events" className={ui.textLink}>
-              See all
-            </Link>
-          </div>
-          <div className={ui.eventStrip}>
-            {sortEvents(events)
-              .slice(0, 8)
-              .map((e) => (
-                <EventCard key={e.id} event={e} compact />
-              ))}
-          </div>
-        </section>
-      )}
     </div>
   )
 }

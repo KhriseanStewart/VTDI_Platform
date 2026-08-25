@@ -1,92 +1,70 @@
-import { Link } from 'react-router-dom'
-import { MapPin, Star, Heart } from 'lucide-react'
-import {
-  CATEGORY_SINGULAR,
-  CATEGORY_COLOR,
-  priceLabel,
-} from '../data/outyahData'
+import { useNavigate } from 'react-router-dom'
+import { Heart, MessageCircle, Plus, Share2 } from 'lucide-react'
+import { CATEGORY_SINGULAR, priceLabel } from '../data/outyahData'
 import { useApp } from '../context/AppContext'
-import { cn, ui } from '../lib/ui'
+import MediaReel from './MediaReel'
+import { reelHandle, reelHashtags, shareReel } from '../lib/reelMeta'
 
-function tagClass(tag) {
-  const t = tag.toLowerCase()
-  if (t.includes('off') || t.includes('free') || t.includes('happy'))
-    return cn(ui.tag, ui.tagGold)
-  if (t.includes('closes soon')) return cn(ui.tag, ui.tagDanger)
-  if (
-    t.includes('live') ||
-    t.includes('tonight') ||
-    t.includes('open now') ||
-    t.includes('fever')
-  )
-    return cn(ui.tag, ui.tagGreen)
-  return ui.tag
+function formatCount(n) {
+  if (!n) return ''
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '')}K`
+  return String(n)
 }
 
-export default function PlaceCard({ place }) {
-  const { isFavorite, toggleFavorite } = useApp()
+export default function PlaceCard({ place, compact = false }) {
+  const navigate = useNavigate()
+  const { isFavorite, toggleFavorite, isInPlan, togglePlan } = useApp()
   const fav = isFavorite(place.id)
+  const inPlan = isInPlan(place.id)
+  const path = `/place/${place.id}`
+  const location = [place.neighborhood, place.area].filter(Boolean).join(', ')
 
   return (
-    <article className={ui.placeCard}>
-      <Link to={`/place/${place.id}`} className={ui.placeCardMedia}>
-        <img
-          src={place.image}
-          alt={place.name}
-          loading="lazy"
-          className={ui.placeCardImg}
-        />
-        <span
-          className={ui.catBadge}
-          style={{ background: CATEGORY_COLOR[place.category] }}
-        >
-          {CATEGORY_SINGULAR[place.category]}
-        </span>
-        <button
-          type="button"
-          className={cn(ui.favBtn, fav && ui.favBtnOn)}
-          aria-label={fav ? 'Remove favorite' : 'Save favorite'}
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            toggleFavorite(place.id)
-          }}
-        >
-          <Heart size={16} fill={fav ? 'currentColor' : 'none'} />
-        </button>
-        {(place.tags || []).length > 0 && (
-          <div className={ui.placeCardTags}>
-            {place.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className={tagClass(tag)}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </Link>
-
-      <Link to={`/place/${place.id}`} className={ui.placeCardBody}>
-        <div className={ui.placeCardTitleRow}>
-          <h3 className={ui.placeCardTitle}>{place.name}</h3>
-          <span className={ui.rating}>
-            <Star size={14} fill="currentColor" />
-            {place.rating > 0 ? place.rating : '—'}
-          </span>
-        </div>
-        <p className={ui.placeMeta}>
-          <MapPin size={13} />
-          {place.neighborhood}, {place.area}
-        </p>
-        <p className={ui.placeSubmeta}>
-          <strong>{priceLabel(place.priceRange)}</strong>
-          {(place.reviewCount || 0) > 0 && (
-            <>
-              <span>·</span>
-              {(place.reviewCount || 0).toLocaleString()} reviews
-            </>
-          )}
-        </p>
-      </Link>
-    </article>
+    <MediaReel
+      to={path}
+      image={place.image}
+      alt={place.name}
+      handle={reelHandle(place.name)}
+      title={place.name}
+      caption={`${location}${place.priceRange ? ` · ${priceLabel(place.priceRange)}` : ''}`}
+      hashtags={reelHashtags([
+        place.area,
+        place.category,
+        CATEGORY_SINGULAR[place.category],
+        ...(place.tags || []),
+        'jamaica',
+      ])}
+      compact={compact}
+      actions={[
+        {
+          key: 'fav',
+          label: fav ? 'Remove favorite' : 'Save favorite',
+          active: fav,
+          hot: true,
+          icon: <Heart size={22} fill={fav ? 'currentColor' : 'none'} />,
+          onClick: () => toggleFavorite(place.id),
+        },
+        {
+          key: 'reviews',
+          label: 'Reviews',
+          count: formatCount(place.reviewCount),
+          icon: <MessageCircle size={22} />,
+          onClick: () => navigate(path),
+        },
+        {
+          key: 'plan',
+          label: inPlan ? 'Remove from plan' : 'Add to outing',
+          active: inPlan,
+          icon: <Plus size={22} />,
+          onClick: () => togglePlan(place.id),
+        },
+        {
+          key: 'share',
+          label: 'Share place',
+          icon: <Share2 size={20} />,
+          onClick: () => shareReel(place.name, path),
+        },
+      ]}
+    />
   )
 }

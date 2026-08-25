@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext'
 import { useData } from '../context/DataContext'
 import { RouteMap } from '../components/maps/GoogleMaps'
 import EmptyState from '../components/EmptyState'
+import CostEstimate from '../components/CostEstimate'
 import { decodeStopsQuery, fetchSharedPlan } from '../lib/sharePlan'
 import { directionsUrl } from '../lib/maps'
 import { btn, cn, ui } from '../lib/ui'
@@ -124,11 +125,11 @@ export default function SharedPlan() {
       ) : (
         <div className="grid gap-5 min-[900px]:grid-cols-2 min-[900px]:items-start">
           <div className={ui.stack}>
-            <ol className="m-0 overflow-hidden rounded-[1.35rem] border border-border bg-border p-0">
+            <ol className={cn(ui.listGroup, 'm-0 p-0')}>
               {stops.map((p, i) => (
                 <li
                   key={p.id}
-                  className="grid grid-cols-[auto_auto_1fr] items-center gap-3 border-b border-border bg-card p-3 last:border-b-0"
+                  className="grid grid-cols-[auto_auto_1fr] items-center gap-3 p-3"
                 >
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[0.8rem] font-bold text-on-primary">
                     {i + 1}
@@ -169,15 +170,18 @@ export default function SharedPlan() {
             </div>
           </div>
 
-          <div className={ui.mapPanel}>
-            <div
-              className={cn(
-                ui.mapCanvas,
-                ui.mapCanvasSm,
-                'min-[900px]:h-[420px] min-[900px]:min-h-[420px]',
-              )}
-            >
-              <RouteMap stops={stops} />
+          <div className={ui.stack}>
+            <CostEstimate places={stops} title="What this night costs" />
+            <div className={ui.mapPanel}>
+              <div
+                className={cn(
+                  ui.mapCanvas,
+                  ui.mapCanvasSm,
+                  'min-[900px]:h-[420px] min-[900px]:min-h-[420px]',
+                )}
+              >
+                <RouteMap stops={stops} />
+              </div>
             </div>
           </div>
         </div>
