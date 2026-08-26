@@ -13,8 +13,9 @@ Updated: **19 August 2026**
    - [`migrations/005_post_moderation.sql`](./migrations/005_post_moderation.sql)
    - [`migrations/006_event_chat.sql`](./migrations/006_event_chat.sql)
    - [`migrations/007_catalog_created_by.sql`](./migrations/007_catalog_created_by.sql)
+   - [`migrations/008_user_moderation.sql`](./migrations/008_user_moderation.sql)
 
-   **Or** paste and run [`full_setup.sql`](./full_setup.sql) (schema + legacy sample seed + migrations 002/003), then apply 004–007 on top.
+   **Or** paste and run [`full_setup.sql`](./full_setup.sql) (schema + legacy sample seed + migrations 002/003), then apply 004–008 on top.
 
 After 006, confirm Realtime is on for the table: **Database → Replication → `supabase_realtime`** should list `event_messages`. The migration adds it automatically; the dashboard is just a sanity check.
 

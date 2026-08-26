@@ -23,6 +23,13 @@ export function AuthProvider({ children }) {
       setProfile(null)
       return null
     }
+
+    if (data?.banned_at) {
+      setProfile(null)
+      await supabase.auth.signOut()
+      return { banned: true, reason: data.ban_reason }
+    }
+
     setProfile(data)
     return data
   }
@@ -61,10 +68,16 @@ export function AuthProvider({ children }) {
       session,
       user,
       profile,
-      isAdmin: profile?.role === 'admin',
+      isAdmin: profile?.role === 'admin' && !profile?.banned_at,
+      isBanned: Boolean(profile?.banned_at),
       async signIn(email, password) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+        const loaded = await loadProfile(data.user?.id)
+        if (loaded?.banned) {
+          sessionStorage.setItem('outyah_ban', loaded.reason || '1')
+          throw new Error('This account has been banned from OutYah.')
+        }
         return data
       },
       async signUp(email, password, meta = {}) {

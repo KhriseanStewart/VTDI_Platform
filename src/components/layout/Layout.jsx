@@ -10,6 +10,7 @@ import {
   Calendar,
   Camera,
   GalleryVerticalEnd,
+  Users,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
@@ -29,6 +30,7 @@ const ADMIN_NAV = [
   { to: '/admin/places', label: 'Places', icon: MapPin },
   { to: '/admin/events', label: 'Events', icon: Calendar },
   { to: '/admin/posts', label: 'Posts', icon: Camera },
+  { to: '/admin/users', label: 'Users', icon: Users },
 ]
 
 export default function Layout() {

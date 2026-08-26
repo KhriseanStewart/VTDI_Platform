@@ -95,29 +95,32 @@ function MineSection({ title, to, addLabel, empty, items, kind }) {
 
 export default function AdminDashboard() {
   const { user, profile } = useAuth()
-  const [counts, setCounts] = useState({ places: 0, events: 0, posts: 0, comments: 0 })
+  const [counts, setCounts] = useState({ places: 0, events: 0, posts: 0, comments: 0, users: 0 })
   const [mine, setMine] = useState({ places: [], events: [] })
   const [loadingMine, setLoadingMine] = useState(true)
 
   useEffect(() => {
     ;(async () => {
-      const [places, events, posts, comments] = await Promise.all([
+      const [places, events, posts, comments, users] = await Promise.all([
         supabase.from('places').select('id', { count: 'exact', head: true }),
         supabase.from('events').select('id', { count: 'exact', head: true }),
         supabase.from('posts').select('id', { count: 'exact', head: true }),
         supabase.from('post_comments').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
       ])
       setCounts({
         places: places.count || 0,
         events: events.count || 0,
         posts: posts.count || 0,
         comments: comments.count || 0,
+        users: users.count || 0,
       })
     })()
   }, [])
 
   useEffect(() => {
     if (!user?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMine({ places: [], events: [] })
       setLoadingMine(false)
       return undefined
@@ -185,6 +188,10 @@ export default function AdminDashboard() {
         <Link to="/admin/posts" className={cn(ui.adminStat, ui.cardHover)}>
           <strong className={ui.adminStatValue}>{counts.posts}</strong>
           <span className={ui.adminStatLabel}>Posts</span>
+        </Link>
+        <Link to="/admin/users" className={cn(ui.adminStat, ui.cardHover)}>
+          <strong className={ui.adminStatValue}>{counts.users}</strong>
+          <span className={ui.adminStatLabel}>Users</span>
         </Link>
         <div className={ui.adminStat}>
           <strong className={ui.adminStatValue}>{counts.comments}</strong>

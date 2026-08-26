@@ -44,6 +44,18 @@ export default function AuthPage() {
   const next = params.get('next') || '/profile'
 
   useEffect(() => {
+    const ban = sessionStorage.getItem('outyah_ban')
+    if (ban) {
+      setError(
+        ban === '1'
+          ? 'This account has been banned from OutYah.'
+          : `This account has been banned from OutYah. Reason: ${ban}`,
+      )
+      sessionStorage.removeItem('outyah_ban')
+    }
+  }, [])
+
+  useEffect(() => {
     if (!loading && user) navigate(next, { replace: true })
   }, [user, loading, navigate, next])
 

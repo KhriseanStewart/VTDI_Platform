@@ -15,6 +15,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminPlaces from './pages/admin/AdminPlaces'
 import AdminEvents from './pages/admin/AdminEvents'
 import AdminPosts from './pages/admin/AdminPosts'
+import AdminUsers from './pages/admin/AdminUsers'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="places" element={<AdminPlaces />} />
           <Route path="events" element={<AdminEvents />} />
           <Route path="posts" element={<AdminPosts />} />
+          <Route path="users" element={<AdminUsers />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

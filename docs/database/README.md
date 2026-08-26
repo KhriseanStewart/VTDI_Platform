@@ -16,6 +16,7 @@ Updated: **19 August 2026**
 | [`005_post_moderation.sql`](./005_post_moderation.sql) | Post `status` + authenticated photo submissions |
 | [`006_event_chat.sql`](./006_event_chat.sql) | Per-user event RSVPs + RSVP-gated realtime chat |
 | [`007_catalog_created_by.sql`](./007_catalog_created_by.sql) | `created_by` on places and events (admin dashboard) |
+| [`008_user_moderation.sql`](./008_user_moderation.sql) | User bans, role guard, RLS blocks for banned users |
 
 **Or** paste [`full_setup.sql`](./full_setup.sql) for schema + legacy sample rows + migrations 002/003 appended.
 
