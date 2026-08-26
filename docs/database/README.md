@@ -1,6 +1,6 @@
 # Supabase setup (OutYah)
 
-Updated: **19 August 2026**
+Updated: **26 August 2026**
 
 ## 1. Run schema (required once)
 
@@ -96,7 +96,7 @@ bun scripts/seed_jamaica_events.mjs
 
 | Table | Description |
 |-------|-------------|
-| `profiles` | User profile + `role` (`user` \| `admin`), 1:1 with `auth.users` |
+| `profiles` | User profile + `role` (`user` \| `admin`), optional ban fields, 1:1 with `auth.users` |
 | `places` | Venues: lat/lng, images, hours, rating, parish (`area`) |
 | `place_reviews` | Source-tagged reviews (`google`, `outyah`, etc.) |
 | `events` | Scheduled events; optional FK to `places` |
@@ -130,5 +130,19 @@ bun scripts/seed_jamaica_events.mjs
   name cannot be spoofed by a hand-rolled insert
 - Realtime: `event_messages` is added to the `supabase_realtime` publication, and Postgres
   Changes applies the same select policy per subscriber
+
+## 9. User moderation (migration 008)
+
+After the first admin is bootstrapped via SQL, additional admins and bans are managed at **`/admin/users`**.
+
+| Column / object | Purpose |
+|-----------------|--------|
+| `profiles.banned_at` | When set, the account is banned |
+| `profiles.ban_reason` | Optional message shown on sign-in |
+| `profiles.banned_by` | Admin who applied the ban |
+| `public.is_banned()` | Used in RLS to block writes for banned users |
+| `guard_profile_update()` | Prevents self-role-escalation, self-ban, and demoting the last admin |
+
+Banned users cannot insert favorites, plan stops, reviews, posts, RSVPs, or chat messages, and cannot upload to the `media` bucket. The app signs them out on session refresh.
 
 Never commit the service role key. The anon key is safe for the browser when RLS is enabled.

@@ -154,6 +154,18 @@ inserts and deletes are rejected, and an `UPDATE` is refused even when the grant
 **Why it matters commercially:** the chat is the retention hook, and it only exists for people
 who declared intent to attend — which is exactly the audience a venue would pay to reach.
 
+### 3b. Admin user moderation ✅ SHIPPED
+
+> Schema in `supabase/migrations/008_user_moderation.sql`, UI at `/admin/users`
+> (`src/pages/admin/AdminUsers.jsx`).
+
+- **Ban / unban** — optional reason, audit fields (`banned_at`, `banned_by`)
+- **Role management** — promote users to admin or demote back to user (cannot demote the last admin)
+- **Sign-in block** — banned users are signed out and cannot authenticate
+- **Database enforcement** — `public.is_banned()` gates writes across favorites, plans, reviews, posts, RSVPs, chat, and storage uploads; banned admins lose admin privileges
+
+Self-service role escalation and self-ban are blocked by the `guard_profile_update` trigger.
+
 ### Pitch
 
 Create “Saturday Ochi,” drop it in WhatsApp, friends join, vote on stops, RSVP. One Directions route for the whole crew.
@@ -285,7 +297,9 @@ These are the floor the wow layer stands on:
 - Shelf-row Explore layout with live open/closed badges
 - JMD outing cost estimates with party size (see §4)
 - Event RSVPs + RSVP-gated realtime chat (see §3a)
+- Full-screen **Feed** tab (middle nav) — vertical venue reel on mobile
 - Admin CRUD + photo approval queue
+- Admin user moderation — ban/unban accounts, promote/demote roles (see §3b)
 
 ---
 

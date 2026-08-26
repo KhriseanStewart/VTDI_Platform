@@ -1,6 +1,6 @@
 # OutYah
 
-Jamaica outing discovery platform — image-forward feed, map view, favorites, outing planner, events, and a Supabase-backed admin portal.
+Jamaica outing discovery platform — full-screen Feed, map explore, favorites, outing planner, events, and a Supabase-backed admin portal (catalog CRUD, photo queue, user bans, role management).
 
 ## Stack
 

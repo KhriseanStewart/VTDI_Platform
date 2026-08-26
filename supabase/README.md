@@ -1,6 +1,6 @@
 # Supabase setup (OutYah)
 
-Updated: **19 August 2026**
+Updated: **26 August 2026**
 
 ## 1. Run schema (required once)
 
@@ -63,6 +63,8 @@ where id = (
 ```
 
 3. Open `/admin`
+
+After the first admin exists, use **`/admin/users`** to promote other accounts, demote admins, or ban/unban users (migration 008). You cannot demote the last remaining admin.
 
 ## 5. Vercel env vars
 

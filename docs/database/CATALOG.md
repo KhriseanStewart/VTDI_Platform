@@ -1,6 +1,6 @@
 # Live catalog (production Supabase)
 
-Updated: **19 August 2026**
+Updated: **26 August 2026**
 
 The live app at [vtdi-platform.vercel.app](https://vtdi-platform.vercel.app) is populated via seed scripts (not `seed.sql` mock rows).
 
@@ -57,8 +57,8 @@ Requires `.env` with `VITE_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `VITE_GOO
 
 ```bash
 # Schema (once) — run in Supabase SQL Editor or via apply script
-# docs/database/001_init.sql → 002_events_schedule.sql → 003_place_reviews.sql
-# or docs/database/full_setup.sql
+# docs/database/001_init.sql → … → 008_user_moderation.sql
+# or docs/database/full_setup.sql, then apply 004–008 if needed
 
 # Island-wide catalog (places + events)
 bun scripts/seed_jamaica_catalog.mjs
